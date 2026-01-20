@@ -1,0 +1,492 @@
+[
+  {
+    "id": 1,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "red",
+    "fiveElements": "fire",
+    "chineseZodiac": "snake",
+    "oddAndEven": "odd",
+    "sumOddAndEven": "oddSum"
+  },
+  {
+    "id": 2,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "red",
+    "fiveElements": "fire",
+    "chineseZodiac": "dragon",
+    "oddAndEven": "even",
+    "sumOddAndEven": "evenSum"
+  },
+  {
+    "id": 3,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "blue",
+    "fiveElements": "metal",
+    "chineseZodiac": "rabbit",
+    "oddAndEven": "odd",
+    "sumOddAndEven": "oddSum"
+  },
+  {
+    "id": 4,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "blue",
+    "fiveElements": "metal",
+    "chineseZodiac": "tiger",
+    "oddAndEven": "even",
+    "sumOddAndEven": "evenSum"
+  },
+  {
+    "id": 5,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "green",
+    "fiveElements": "earth",
+    "chineseZodiac": "ox",
+    "oddAndEven": "odd",
+    "sumOddAndEven": "oddSum"
+  },
+  {
+    "id": 6,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "green",
+    "fiveElements": "earth",
+    "chineseZodiac": "rat",
+    "oddAndEven": "even",
+    "sumOddAndEven": "evenSum"
+  },
+  {
+    "id": 7,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "red",
+    "fiveElements": "wood",
+    "chineseZodiac": "pig",
+    "oddAndEven": "odd",
+    "sumOddAndEven": "oddSum"
+  },
+  {
+    "id": 8,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "red",
+    "fiveElements": "wood",
+    "chineseZodiac": "dog",
+    "oddAndEven": "even",
+    "sumOddAndEven": "evenSum"
+  },
+  {
+    "id": 9,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "blue",
+    "fiveElements": "fire",
+    "chineseZodiac": "rooster",
+    "oddAndEven": "odd",
+    "sumOddAndEven": "oddSum"
+  },
+  {
+    "id": 10,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "blue",
+    "fiveElements": "fire",
+    "chineseZodiac": "monkey",
+    "oddAndEven": "even",
+    "sumOddAndEven": "oddSum"
+  },
+  {
+    "id": 11,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "green",
+    "fiveElements": "metal",
+    "chineseZodiac": "goat",
+    "oddAndEven": "odd",
+    "sumOddAndEven": "evenSum"
+  },
+  {
+    "id": 12,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "red",
+    "fiveElements": "metal",
+    "chineseZodiac": "horse",
+    "oddAndEven": "even",
+    "sumOddAndEven": "oddSum"
+  },
+  {
+    "id": 13,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "red",
+    "fiveElements": "water",
+    "chineseZodiac": "snake",
+    "oddAndEven": "odd",
+    "sumOddAndEven": "evenSum"
+  },
+  {
+    "id": 14,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "blue",
+    "fiveElements": "water",
+    "chineseZodiac": "dragon",
+    "oddAndEven": "even",
+    "sumOddAndEven": "oddSum"
+  },
+  {
+    "id": 15,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "blue",
+    "fiveElements": "wood",
+    "chineseZodiac": "rabbit",
+    "oddAndEven": "odd",
+    "sumOddAndEven": "evenSum"
+  },
+  {
+    "id": 16,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "green",
+    "fiveElements": "wood",
+    "chineseZodiac": "tiger",
+    "oddAndEven": "even",
+    "sumOddAndEven": "oddSum"
+  },
+  {
+    "id": 17,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "green",
+    "fiveElements": "fire",
+    "chineseZodiac": "ox",
+    "oddAndEven": "odd",
+    "sumOddAndEven": "evenSum"
+  },
+  {
+    "id": 18,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "red",
+    "fiveElements": "fire",
+    "chineseZodiac": "rat",
+    "oddAndEven": "even",
+    "sumOddAndEven": "oddSum"
+  },
+  {
+    "id": 19,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "red",
+    "fiveElements": "earth",
+    "chineseZodiac": "pig",
+    "oddAndEven": "odd",
+    "sumOddAndEven": "evenSum"
+  },
+  {
+    "id": 20,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "blue",
+    "fiveElements": "earth",
+    "chineseZodiac": "dog",
+    "oddAndEven": "even",
+    "sumOddAndEven": "evenSum"
+  },
+  {
+    "id": 21,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "green",
+    "fiveElements": "water",
+    "chineseZodiac": "rooster",
+    "oddAndEven": "odd",
+    "sumOddAndEven": "oddSum"
+  },
+  {
+    "id": 22,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "green",
+    "fiveElements": "water",
+    "chineseZodiac": "monkey",
+    "oddAndEven": "even",
+    "sumOddAndEven": "evenSum"
+  },
+  {
+    "id": 23,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "red",
+    "fiveElements": "wood",
+    "chineseZodiac": "goat",
+    "oddAndEven": "odd",
+    "sumOddAndEven": "oddSum"
+  },
+  {
+    "id": 24,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "red",
+    "fiveElements": "wood",
+    "chineseZodiac": "horse",
+    "oddAndEven": "even",
+    "sumOddAndEven": "evenSum"
+  },
+  {
+    "id": 25,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "blue",
+    "fiveElements": "metal",
+    "chineseZodiac": "snake",
+    "oddAndEven": "odd",
+    "sumOddAndEven": "oddSum"
+  },
+  {
+    "id": 26,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "blue",
+    "fiveElements": "metal",
+    "chineseZodiac": "dragon",
+    "oddAndEven": "even",
+    "sumOddAndEven": "evenSum"
+  },
+  {
+    "id": 27,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "green",
+    "fiveElements": "earth",
+    "chineseZodiac": "rabbit",
+    "oddAndEven": "odd",
+    "sumOddAndEven": "oddSum"
+  },
+  {
+    "id": 28,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "green",
+    "fiveElements": "earth",
+    "chineseZodiac": "tiger",
+    "oddAndEven": "even",
+    "sumOddAndEven": "evenSum"
+  },
+  {
+    "id": 29,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "red",
+    "fiveElements": "water",
+    "chineseZodiac": "ox",
+    "oddAndEven": "odd",
+    "sumOddAndEven": "oddSum"
+  },
+  {
+    "id": 30,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "red",
+    "fiveElements": "water",
+    "chineseZodiac": "rat",
+    "oddAndEven": "even",
+    "sumOddAndEven": "oddSum"
+  },
+  {
+    "id": 31,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "blue",
+    "fiveElements": "fire",
+    "chineseZodiac": "pig",
+    "oddAndEven": "odd",
+    "sumOddAndEven": "evenSum"
+  },
+  {
+    "id": 32,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "green",
+    "fiveElements": "fire",
+    "chineseZodiac": "dog",
+    "oddAndEven": "even",
+    "sumOddAndEven": "oddSum"
+  },
+  {
+    "id": 33,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "green",
+    "fiveElements": "metal",
+    "chineseZodiac": "rooster",
+    "oddAndEven": "odd",
+    "sumOddAndEven": "evenSum"
+  },
+  {
+    "id": 34,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "red",
+    "fiveElements": "metal",
+    "chineseZodiac": "monkey",
+    "oddAndEven": "even",
+    "sumOddAndEven": "oddSum"
+  },
+  {
+    "id": 35,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "red",
+    "fiveElements": "earth",
+    "chineseZodiac": "goat",
+    "oddAndEven": "odd",
+    "sumOddAndEven": "evenSum"
+  },
+  {
+    "id": 36,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "blue",
+    "fiveElements": "earth",
+    "chineseZodiac": "horse",
+    "oddAndEven": "even",
+    "sumOddAndEven": "oddSum"
+  },
+  {
+    "id": 37,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "blue",
+    "fiveElements": "wood",
+    "chineseZodiac": "snake",
+    "oddAndEven": "odd",
+    "sumOddAndEven": "evenSum"
+  },
+  {
+    "id": 38,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "green",
+    "fiveElements": "wood",
+    "chineseZodiac": "dragon",
+    "oddAndEven": "even",
+    "sumOddAndEven": "oddSum"
+  },
+  {
+    "id": 39,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "green",
+    "fiveElements": "fire",
+    "chineseZodiac": "rabbit",
+    "oddAndEven": "odd",
+    "sumOddAndEven": "evenSum"
+  },
+  {
+    "id": 40,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "red",
+    "fiveElements": "fire",
+    "chineseZodiac": "tiger",
+    "oddAndEven": "even",
+    "sumOddAndEven": "evenSum"
+  },
+  {
+    "id": 41,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "blue",
+    "fiveElements": "metal",
+    "chineseZodiac": "ox",
+    "oddAndEven": "odd",
+    "sumOddAndEven": "oddSum"
+  },
+  {
+    "id": 42,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "blue",
+    "fiveElements": "metal",
+    "chineseZodiac": "rat",
+    "oddAndEven": "even",
+    "sumOddAndEven": "evenSum"
+  },
+  {
+    "id": 43,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "green",
+    "fiveElements": "water",
+    "chineseZodiac": "pig",
+    "oddAndEven": "odd",
+    "sumOddAndEven": "oddSum"
+  },
+  {
+    "id": 44,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "green",
+    "fiveElements": "water",
+    "chineseZodiac": "dog",
+    "oddAndEven": "even",
+    "sumOddAndEven": "evenSum"
+  },
+  {
+    "id": 45,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "red",
+    "fiveElements": "wood",
+    "chineseZodiac": "rooster",
+    "oddAndEven": "odd",
+    "sumOddAndEven": "oddSum"
+  },
+  {
+    "id": 46,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "red",
+    "fiveElements": "wood",
+    "chineseZodiac": "monkey",
+    "oddAndEven": "even",
+    "sumOddAndEven": "evenSum"
+  },
+  {
+    "id": 47,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "blue",
+    "fiveElements": "fire",
+    "chineseZodiac": "goat",
+    "oddAndEven": "odd",
+    "sumOddAndEven": "oddSum"
+  },
+  {
+    "id": 48,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "blue",
+    "fiveElements": "fire",
+    "chineseZodiac": "horse",
+    "oddAndEven": "even",
+    "sumOddAndEven": "evenSum"
+  },
+  {
+    "id": 49,
+    "active": "false",
+    "disabled": "false",
+    "waveColor": "green",
+    "fiveElements": "earth",
+    "chineseZodiac": "snake",
+    "oddAndEven": "odd",
+    "sumOddAndEven": "oddSum"
+  }
+]

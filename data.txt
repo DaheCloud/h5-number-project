@@ -1,0 +1,37 @@
+色：waveColor
+  蓝波 - blueWave
+  绿波 - greenWave
+  红波 - redWave
+  五行：fiveElements
+    Metal (金)
+    Wood (木)
+    Water (水)
+    Fire (火)
+    Earth (土)
+  3. 生肖：chineseZodiac
+    鼠 - Rat
+    牛 - Ox 
+    虎 - Tiger
+    兔 - Rabbit 
+    龙 - Dragon
+    蛇 - Snake
+    马 - Horse
+    羊 - Goat 
+    猴 - Monkey
+    鸡 - Rooster 
+    狗 - Dog
+    猪 - Pig 
+  
+  5. 单双 单：odd, 双数：even
+  6.合单双  合单： oddSum, 合双： evenSum
+  7.五门 1门，2门，3门，4门，5门  五门： fiveGatesZodiac Gate 1, Gate 2, Gate 3, Gate 4, Gate 5
+  8.段位 1段，2段，3段，4段，5段，6段，7段  tierLevel Tier 1, Tier 2, Tier 3, Tier 4, Tier 5, Tier 6, Tier 7
+  9.合数 合01, 合02, 合03, 合04,合05,合06,合07,合08,合09,合10,合11,合12,合13  sumNumber：Sum 01, Sum 02, Sum 03, Sum 04, Sum 05, Sum 06, Sum 07, Sum 08, Sum 09, Sum 10, Sum 11, Sum 12, Sum 13
+  4. 家禽
+  5. 野兽
+  10. 单笔
+  11. 双笔
+  家肖有：牛,马,羊,鸡,狗,猪
+  野肖有: 鼠,虎,兔,龙,蛇,猴
+  天肖有: 猪,牛,猴,马,兔,龙
+  地肖有: 蛇,羊,鸡,狗,鼠,虎

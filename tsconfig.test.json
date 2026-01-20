@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "outDir": "./temp_test",
+    "module": "ESNext",
+    "target": "ES2020",
+    "moduleResolution": "node",
+    "strict": true,
+    "noEmitOnError": true,
+    "noEmit": false,
+    
+  },
+  "include": ["src/utils/zodiac.ts"]
+}
