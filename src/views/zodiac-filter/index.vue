@@ -1,8 +1,9 @@
 <script setup lang="ts">
 defineOptions({ name: 'ZodiacFilterPage' })
 import { ref, computed } from 'vue'
+import { ALL_ZODIACS, addGroup, computeRanking } from '@/utils/zodiac'
 
-const zodiacs = ['鼠','牛','虎','兔','龙','蛇','马','羊','猴','鸡','狗','猪']
+const zodiacs = ALL_ZODIACS
 
 const selected = ref<string[]>([])
 const groups = ref<string[][]>([])
@@ -36,20 +37,13 @@ function confirmGroup() {
     showToast('请先选择生肖')
     return
   }
-  groups.value.push([...selected.value])
+  groups.value = addGroup(groups.value, selected.value)
   selected.value = []
   showToast('已添加一组')
 }
 
 const totalCount = computed(() => groups.value.reduce((s, g) => s + g.length, 0))
-const ranking = computed(() => {
-  if (totalCount.value === 0) return [] as { name: string; count: number; ratio: number }[]
-  const m = new Map<string, number>()
-  for (const g of groups.value) for (const n of g) m.set(n, (m.get(n) || 0) + 1)
-  return Array.from(m.entries())
-    .map(([name, count]) => ({ name, count, ratio: count / totalCount.value }))
-    .sort((a, b) => b.ratio - a.ratio)
-})
+const ranking = computed(() => computeRanking(groups.value))
 
 async function clearAllGroups() {
   try {

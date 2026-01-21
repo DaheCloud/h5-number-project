@@ -165,8 +165,9 @@ function toggleConditionOption(opt: string) {
 function clearAllConditions() { selectedConditionOptions.value = [] }
 function sumDigits(n: number) { return Math.floor(n / 10) + (n % 10) }
 const labelToElement: Record<string, FiveElement> = { 金: 'metal', 木: 'wood', 水: 'water', 火: 'fire', 土: 'earth' }
+const allIds = computed(() => numbers.value.map((i: any) => Number(i.id)))
 function idsForOption(opt: string): number[] {
-  const all = numbers.value.map((i: any) => Number(i.id))
+  const all = allIds.value
   {
     const el = labelToElement[opt as any]
     if (el) return idsByElement[el]
