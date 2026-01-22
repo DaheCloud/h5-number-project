@@ -14,6 +14,7 @@
       <van-tabbar route safe-area-inset-bottom active-color="var(--color-primary)" inactive-color="var(--color-text-muted)">
         <van-tabbar-item to="/home" icon="home-o">首页</van-tabbar-item>
         <van-tabbar-item to="/num-chose" icon="apps-o">选号</van-tabbar-item>
+        <van-tabbar-item to="/filter-numbers" icon="filter-o">筛选</van-tabbar-item>
         <van-tabbar-item to="/zodiac-filter" icon="orders-o">生肖</van-tabbar-item>
         <van-tabbar-item to="/head-tail-filter" icon="setting-o">头尾</van-tabbar-item>
       </van-tabbar>

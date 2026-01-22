@@ -29,6 +29,13 @@ export default [
         meta: {
           title: '头尾过滤'
         }
+      },
+      {
+        path: '/filter-numbers',
+        component: () => import('@/views/filter-numbers/index.vue'),
+        meta: {
+          title: '筛选号码'
+        }
       }
     ],
   },

@@ -45,5 +45,10 @@ export default defineConfig(({ mode }) => {
         resolvers: [VantResolver()],
       }),
     ],
+    server: {
+      fs: {
+        allow: ['../../'],
+      },
+    },
   };
 })

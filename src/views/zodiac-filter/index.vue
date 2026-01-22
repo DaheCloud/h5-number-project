@@ -42,7 +42,7 @@ function confirmGroup() {
   showToast('已添加一组')
 }
 
-const totalCount = computed(() => groups.value.reduce((s, g) => s + g.length, 0))
+// const totalCount = computed(() => groups.value.reduce((s, g) => s + g.length, 0))
 const ranking = computed(() => computeRanking(groups.value))
 
 async function clearAllGroups() {

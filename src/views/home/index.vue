@@ -64,6 +64,14 @@
         date: getRandomDate(),
         path: "/head-tail-filter",
       });
+      list.value.push({
+        id: start + 3,
+        title: `筛选号码`,
+        description: getRandomDescription(),
+        author: getRandomAuthor(),
+        date: getRandomDate(),
+        path: "/filter-numbers",
+      });
       loading.value = false;
       finished.value = true;
     }, 500);
