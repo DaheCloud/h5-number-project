@@ -1,4 +1,5 @@
 <script setup lang="ts">
+defineOptions({ name: 'FilterNumbersPage' })
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useFilterLogic } from './useFilterLogic';
@@ -12,6 +13,7 @@ const {
   totalItems, 
   toggleFilter, 
   clearFilters, 
+  toggleExclusion,
   onSave, 
   onLoad, 
   getWaveColorById 
@@ -55,6 +57,7 @@ const onClickLeft = () => {
       :get-wave-color="getWaveColorById"
       @clear="clearFilters"
       @remove-filter="toggleFilter"
+      @toggle-exclusion="toggleExclusion"
     />
 
     <div class="content-area">

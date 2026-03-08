@@ -1,23 +1,30 @@
 import { ref, computed } from 'vue';
-import rawData from '../../../num-data.json';
+import { lotteryDataService, type LotteryNumber } from '../../services/lotteryData';
 
 export function useFilterLogic() {
   // State
-  const allNumbers = ref<any[]>(rawData);
+  // Use data service instead of raw JSON
+  const allNumbers = ref<LotteryNumber[]>([]);
+  
+  try {
+    allNumbers.value = lotteryDataService.getAllNumbers();
+  } catch (error) {
+    console.error('Failed to load lottery data:', error);
+    import('vant').then(({ showToast }) => {
+      showToast('数据加载失败，请刷新重试');
+    });
+  }
+
   const selectedFilters = ref<string[]>([]);
+  const excludedNumbers = ref<string[]>([]);
   const searchText = ref('');
   const searchType = ref<'exact' | 'fuzzy' | 'regex'>('fuzzy');
   const sortType = ref<'asc' | 'desc'>('asc');
 
-  // --- Helpers ---
-  const zodiacMap: Record<string, string> = {
-    'rat': '鼠', 'ox': '牛', 'tiger': '虎', 'rabbit': '兔', 'dragon': '龙', 'snake': '蛇',
-    'horse': '马', 'goat': '羊', 'monkey': '猴', 'rooster': '鸡', 'dog': '狗', 'pig': '猪'
-  };
 
-  const fiveElementsMap: Record<string, string> = {
-    'metal': '金', 'gold': '金', 'wood': '木', 'water': '水', 'fire': '火', 'earth': '土'
-  };
+  // --- Helpers ---
+  // Using Service data, we don't need hardcoded maps for basic attributes.
+  // But filter logic relies on UI labels matching data attributes.
 
   const getFilterCategory = (filter: string): string => {
     if (['单', '双'].includes(filter)) return 'oddEven';
@@ -30,22 +37,26 @@ export function useFilterLogic() {
     if (['尾大', '尾小'].includes(filter)) return 'tailBigSmall';
     if (['金', '木', '水', '火', '土'].includes(filter)) return 'fiveElements';
     if (['红单', '红双', '绿单', '绿双', '蓝单', '蓝双'].includes(filter)) return 'colorOddEven';
+    // Zodiacs
     if (['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪'].includes(filter)) return 'zodiac';
+    
     if (filter.endsWith('尾') && filter !== '大尾' && filter !== '小尾') return 'tailExact';
     if (filter.endsWith('头')) return 'head';
     if (filter.endsWith('门')) return 'men';
     if (filter.endsWith('段')) return 'duan';
     if (filter.endsWith('合')) return 'heShu';
+    
     if (['天肖', '地肖'].includes(filter)) return 'skyEarth';
     if (['阴肖', '阳肖'].includes(filter)) return 'yinYang';
     if (['左肖', '右肖'].includes(filter)) return 'leftRight';
     if (['前肖', '后肖'].includes(filter)) return 'frontBack';
     if (['独字肖', '合字肖'].includes(filter)) return 'singleMulti';
+    
     return 'other';
   };
 
-  const matchNumber = (numObj: any, filter: string): boolean => {
-    const id = Number(numObj.id);
+  const matchNumber = (numObj: LotteryNumber, filter: string): boolean => {
+    const id = numObj.id;
     
     switch (filter) {
       case '单': return numObj.oddAndEven === 'odd';
@@ -53,17 +64,30 @@ export function useFilterLogic() {
       case '大': return id >= 25;
       case '小': return id <= 24;
       
-      case '红波': return numObj.waveColor === 'red';
-      case '绿波': return numObj.waveColor === 'green';
-      case '蓝波': return numObj.waveColor === 'blue';
+      case '红波': return numObj.wave.label === '红'; // Or check key 'red'
+      case '绿波': return numObj.wave.label === '绿';
+      case '蓝波': return numObj.wave.label === '蓝';
       
-      case '家禽': return numObj.poultryBeast === '家禽';
-      case '野兽': return numObj.poultryBeast === '野兽';
+      // Need to check if 'poultryBeast' is in LotteryNumber or need auxiliary check
+      // Current LotteryNumber doesn't have poultryBeast.
+      // We need to fetch it from 'other attributes' in data.json via service or extending LotteryNumber
+      // For now, let's assume we can check against raw data or if service provides a helper.
+      // Since we want to rely on service, let's see if we can get it.
+      // The current service puts everything in 'numbers'. 
+      // But '家禽', '野兽' are in '其它属性' in data.json.
+      // We should use a helper to check these attributes.
+      case '家禽': case '野兽': 
+      case '天肖': case '地肖':
+      case '阴肖': case '阳肖':
+      case '前肖': case '后肖':
+      case '左肖': case '右肖':
+      case '独字肖': case '合字肖':
+         return checkOtherAttribute(numObj, filter);
       
-      case '合单': return numObj.sumOddAndEven === 'oddSum';
-      case '合双': return numObj.sumOddAndEven === 'evenSum';
-      case '合大': return numObj.sum >= 7;
-      case '合小': return numObj.sum <= 6;
+      case '合单': return numObj.sumOddAndEven === 'odd'; // Service normalized to 'odd'/'even'
+      case '合双': return numObj.sumOddAndEven === 'even';
+      case '合大': return (Math.floor(id/10) + id%10) >= 7;
+      case '合小': return (Math.floor(id/10) + id%10) <= 6;
       case '尾大': return numObj.tail >= 5;
       case '尾小': return numObj.tail <= 4;
       
@@ -72,22 +96,19 @@ export function useFilterLogic() {
       case '大双': return id >= 25 && numObj.oddAndEven === 'even';
       case '小双': return id <= 24 && numObj.oddAndEven === 'even';
       
-      case '金': return fiveElementsMap[numObj.fiveElements] === '金';
-      case '木': return fiveElementsMap[numObj.fiveElements] === '木';
-      case '水': return fiveElementsMap[numObj.fiveElements] === '水';
-      case '火': return fiveElementsMap[numObj.fiveElements] === '火';
-      case '土': return fiveElementsMap[numObj.fiveElements] === '土';
+      case '金': case '木': case '水': case '火': case '土':
+        return numObj.wuxing.label === filter;
       
-      case '红单': return numObj.waveColor === 'red' && numObj.oddAndEven === 'odd';
-      case '红双': return numObj.waveColor === 'red' && numObj.oddAndEven === 'even';
-      case '绿单': return numObj.waveColor === 'green' && numObj.oddAndEven === 'odd';
-      case '绿双': return numObj.waveColor === 'green' && numObj.oddAndEven === 'even';
-      case '蓝单': return numObj.waveColor === 'blue' && numObj.oddAndEven === 'odd';
-      case '蓝双': return numObj.waveColor === 'blue' && numObj.oddAndEven === 'even';
+      case '红单': return numObj.wave.label === '红' && numObj.oddAndEven === 'odd';
+      case '红双': return numObj.wave.label === '红' && numObj.oddAndEven === 'even';
+      case '绿单': return numObj.wave.label === '绿' && numObj.oddAndEven === 'odd';
+      case '绿双': return numObj.wave.label === '绿' && numObj.oddAndEven === 'even';
+      case '蓝单': return numObj.wave.label === '蓝' && numObj.oddAndEven === 'odd';
+      case '蓝双': return numObj.wave.label === '蓝' && numObj.oddAndEven === 'even';
       
       case '鼠': case '牛': case '虎': case '兔': case '龙': case '蛇':
       case '马': case '羊': case '猴': case '鸡': case '狗': case '猪':
-        return zodiacMap[numObj.chineseZodiac] === filter;
+        return numObj.zodiac.label === filter;
         
       case '0尾': return numObj.tail === 0;
       case '1尾': return numObj.tail === 1;
@@ -120,39 +141,46 @@ export function useFilterLogic() {
       case '6段': return numObj.duan === '6段';
       case '7段': return numObj.duan === '7段';
       
-      case '1合': return numObj.heShu === '合01';
-      case '2合': return numObj.heShu === '合02';
-      case '3合': return numObj.heShu === '合03';
-      case '4合': return numObj.heShu === '合04';
-      case '5合': return numObj.heShu === '合05';
-      case '6合': return numObj.heShu === '合06';
-      case '7合': return numObj.heShu === '合07';
-      case '8合': return numObj.heShu === '合08';
-      case '9合': return numObj.heShu === '合09';
-      case '10合': return numObj.heShu === '合10';
-      case '11合': return numObj.heShu === '合11';
-      case '12合': return numObj.heShu === '合12';
-      case '13合': return numObj.heShu === '合13';
-      
-      case '天肖': return numObj.skyEarth === '天肖';
-      case '地肖': return numObj.skyEarth === '地肖';
-      case '阴肖': return numObj.yinYang === '阴性' || numObj.yinYang === '阴肖';
-      case '阳肖': return numObj.yinYang === '阳性' || numObj.yinYang === '阳肖';
-      
-      case '前肖': return ['鼠','牛','虎','兔','龙','蛇'].includes(zodiacMap[numObj.chineseZodiac] || '');
-      case '后肖': return ['马','羊','猴','鸡','狗','猪'].includes(zodiacMap[numObj.chineseZodiac] || '');
-      case '左肖': return ['鼠','牛','龙','蛇','猴','鸡'].includes(zodiacMap[numObj.chineseZodiac] || '');
-      case '右肖': return ['虎','兔','马','羊','狗','猪'].includes(zodiacMap[numObj.chineseZodiac] || '');
-      case '独字肖': return ['鼠','牛','虎','兔','马','羊','狗','猪'].includes(zodiacMap[numObj.chineseZodiac] || '');
-      case '合字肖': return ['龙','蛇','猴','鸡'].includes(zodiacMap[numObj.chineseZodiac] || '');
+      // heShu in service is '合01', '合02'...
+      // filter is '1合', '2合'...
+      case '1合': case '2合': case '3合': case '4合': case '5合':
+      case '6合': case '7合': case '8合': case '9合': case '10合':
+      case '11合': case '12合': case '13合':
+        const num = filter.replace('合', '').padStart(2, '0');
+        return numObj.heShu === `合${num}`;
 
       default: return false;
     }
   };
 
+  // Helper to check attributes in "其它属性"
+  const rawData = lotteryDataService.getRawData() || {};
+  const otherAttrs = (rawData['其它属性'] || {}) as Record<string, string[]>;
+  
+  const checkOtherAttribute = (numObj: LotteryNumber, attrName: string): boolean => {
+      // Map UI filter name to JSON key if needed
+      const keyMap: Record<string, string> = {
+          '家禽': '家禽', '野兽': '野兽',
+          '天肖': '天肖', '地肖': '地肖',
+          '阴肖': '阴性', '阳肖': '阳性', // JSON uses 阴性/阳性
+          // Others might not exist in JSON, handle gracefully
+          '前肖': '前肖', '后肖': '后肖',
+          '左肖': '左肖', '右肖': '右肖',
+          '独字肖': '独字肖', '合字肖': '合字肖'
+      };
+      
+      const jsonKey = keyMap[attrName] || attrName;
+      const values = otherAttrs[jsonKey];
+      if (!values) return false;
+      
+      // values is list of zodiac names like ["鼠", "牛"] or ["鼠龙猴"]
+      // Check if numObj.zodiac.label is in this list
+      return values.some(v => v.includes(numObj.zodiac.label));
+  };
+
   const getWaveColorById = (id: number): string => {
-    const number = allNumbers.value.find((num: any) => Number(num.id) === id);
-    return number?.waveColor || '';
+    const number = allNumbers.value.find((num) => num.id === id);
+    return number?.wave.key || '';
   };
 
   // --- Computed Properties ---
@@ -198,6 +226,11 @@ export function useFilterLogic() {
       }
     }
 
+    // Exclude manually removed numbers
+    if (excludedNumbers.value.length > 0) {
+      result = result.filter(n => !excludedNumbers.value.includes(n.id.toString().padStart(2, '0')));
+    }
+
     // Sort
     result = [...result].sort((a, b) => {
       const valA = a.id.toString().padStart(3, '0');
@@ -224,14 +257,27 @@ export function useFilterLogic() {
 
   const clearFilters = () => {
     selectedFilters.value = [];
+    excludedNumbers.value = [];
     import('vant').then(({ showToast }) => {
       showToast('已清空条件');
     });
   };
 
+  const toggleExclusion = (num: string) => {
+    const idx = excludedNumbers.value.indexOf(num);
+    if (idx > -1) {
+      excludedNumbers.value.splice(idx, 1);
+    } else {
+      excludedNumbers.value.push(num);
+    }
+  };
+
   const onSave = () => {
     try {
-      const settings = { filters: selectedFilters.value };
+      const settings = { 
+        filters: selectedFilters.value,
+        excluded: excludedNumbers.value
+      };
       localStorage.setItem('filterSettings', JSON.stringify(settings));
       import('vant').then(({ showToast }) => {
         showToast('筛选条件已保存');
@@ -247,6 +293,7 @@ export function useFilterLogic() {
       try {
         const settings = JSON.parse(saved);
         selectedFilters.value = settings.filters || [];
+        excludedNumbers.value = settings.excluded || [];
         import('vant').then(({ showToast }) => {
           showToast('筛选条件已加载');
         });
@@ -269,6 +316,7 @@ export function useFilterLogic() {
     sortType,
     toggleFilter,
     clearFilters,
+    toggleExclusion,
     onSave,
     onLoad,
     getWaveColorById

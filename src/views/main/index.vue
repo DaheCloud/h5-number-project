@@ -5,7 +5,7 @@
   <div class="layout-container">
     <main class="main-content">
       <RouterView v-slot="{ Component }">
-        <KeepAlive :include="['NumChosePage','ZodiacFilterPage','HeadTailFilterPage']">
+        <KeepAlive :include="['NumChosePage','FilterCenterPage','FilterNumbersPage']">
           <component :is="Component" />
         </KeepAlive>
       </RouterView>
@@ -15,8 +15,7 @@
         <van-tabbar-item to="/home" icon="home-o">首页</van-tabbar-item>
         <van-tabbar-item to="/num-chose" icon="apps-o">选号</van-tabbar-item>
         <van-tabbar-item to="/filter-numbers" icon="filter-o">筛选</van-tabbar-item>
-        <van-tabbar-item to="/zodiac-filter" icon="orders-o">生肖</van-tabbar-item>
-        <van-tabbar-item to="/head-tail-filter" icon="setting-o">头尾</van-tabbar-item>
+        <van-tabbar-item to="/filter-center" icon="wap-nav">助手</van-tabbar-item>
       </van-tabbar>
     </footer>
   </div>

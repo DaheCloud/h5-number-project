@@ -17,18 +17,19 @@ export default [
         }
       }
       ,{
+        path: '/filter-center',
+        component: () => import('@/views/filter-center/index.vue'),
+        meta: {
+          title: '筛选中心'
+        }
+      },
+      {
         path: '/zodiac-filter',
-        component: () => import('@/views/zodiac-filter/index.vue'),
-        meta: {
-          title: '生肖选择过滤'
-        }
-      }
-      ,{
+        redirect: '/filter-center?tab=zodiac'
+      },
+      {
         path: '/head-tail-filter',
-        component: () => import('@/views/head-tail-filter/index.vue'),
-        meta: {
-          title: '头尾过滤'
-        }
+        redirect: '/filter-center?tab=head-tail'
       },
       {
         path: '/filter-numbers',

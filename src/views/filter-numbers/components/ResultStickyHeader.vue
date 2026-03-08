@@ -12,6 +12,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'clear'): void;
   (e: 'removeFilter', item: string): void;
+  (e: 'toggleExclusion', num: string): void;
 }>();
 
 const showHeader = computed(() => props.selectedCount > 0 || props.filteredNumbers.length > 0);
@@ -81,6 +82,8 @@ const copyResults = async () => {
           :key="num" 
           class="ball"
           :class="`ball-${getWaveColor(Number(num))}`"
+          @click="emit('toggleExclusion', num)"
+          title="点击移除"
         >
           {{ num }}
         </div>
@@ -174,6 +177,12 @@ const copyResults = async () => {
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
   transition: transform 0.2s;
   user-select: none;
+  cursor: pointer;
+}
+
+.ball:hover {
+  transform: scale(1.1);
+  opacity: 0.8;
 }
 
 .ball-red { background: linear-gradient(135deg, #ff7875, #f5222d); color: white; box-shadow: 0 2px 6px rgba(245, 34, 45, 0.3); }
