@@ -2,7 +2,6 @@
 defineOptions({ name: 'FilterCenterPage' })
 import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { showToast } from 'vant'
 import HeadTailFilter from './components/HeadTailFilter.vue'
 import ZodiacFilter from './components/ZodiacFilter.vue'
 
