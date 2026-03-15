@@ -1,8 +1,50 @@
 <script setup lang="ts">
 defineOptions({ name: 'NumChosePage' })
 import { ref, computed, onMounted, watch } from 'vue'
+import { showToast } from 'vant'
 import NumberButton from './components/NumberButton.vue'
 import { lotteryDataService, type ZodiacKey, type WuxingKey, type WaveKey } from '../../services/lotteryData'
+
+// 手动输入弹窗状态
+const showManualInputDialog = ref(false)
+const manualInputText = ref('')
+
+function openManualInputDialog() {
+  showManualInputDialog.value = true
+}
+
+function closeManualInputDialog() {
+  showManualInputDialog.value = false
+  manualInputText.value = ''
+}
+
+function handleManualInputConfirm() {
+  const text = manualInputText.value.trim()
+  if (!text) {
+    showToast('请输入号码')
+    return
+  }
+  
+  const numbers = text.split(/[,\s\n]+/).filter(s => s).map(s => {
+    const num = parseInt(s, 10)
+    return isNaN(num) ? null : num
+  }).filter(n => n !== null && n >= 1 && n <= 49) as number[]
+
+  if (numbers.length === 0) {
+    showToast('未识别到有效号码(1-49)')
+    return
+  }
+
+  const uniqueNumbers = [...new Set(numbers)]
+  const existingSet = new Set(selectedNumbers.value)
+  for (const n of uniqueNumbers) {
+    existingSet.add(n)
+  }
+  selectedNumbers.value = Array.from(existingSet).sort((a, b) => a - b)
+  
+  showToast(`已添加 ${uniqueNumbers.length} 个号码`)
+  closeManualInputDialog()
+}
 
 // 页面状态
 const activeTab = ref<'number' | 'zodiac' | 'five' | 'condition'>('number')
@@ -606,9 +648,9 @@ async function copyNumbers() {
         <div class="actions">
           <van-button size="small" plain type="primary" @click="copyNumbers">复制号码</van-button>
           <van-button size="small" plain @click="clearSelectedNumbers">清空</van-button>
-          <van-button size="small" plain>
+          <van-button size="small" plain @click="openManualInputDialog">
             <van-icon name="arrow-down" />
-            <span class="ml-4">展开详情</span>
+            <span class="ml-4">手动输入</span>
           </van-button>
           <van-button v-if="selectedNumbers.length > 0" size="small" plain @click="toggleSortOrder">
             <van-icon
@@ -902,6 +944,28 @@ async function copyNumbers() {
         <van-button type="primary" block @click="saveAndCopy">复制保存</van-button>
         <van-button type="danger" block plain @click="deleteSaved">删除本地记录</van-button>
       </div>
+
+      <van-popup v-model:show="showManualInputDialog" position="bottom" round :style="{ height: '60%' }" @close="closeManualInputDialog">
+        <div class="manual-input-popup">
+          <div class="popup-header">
+            <span class="popup-title">手动输入号码</span>
+            <van-icon name="cross" size="20" @click="closeManualInputDialog" />
+          </div>
+          <div class="popup-content">
+            <textarea
+              v-model="manualInputText"
+              class="manual-input-textarea"
+              placeholder="请输入号码，多个号码用逗号、空格或换行分隔，支持1-49的数字"
+              rows="8"
+            ></textarea>
+          </div>
+          <div class="popup-footer">
+            <van-button size="large" type="primary" block @click="handleManualInputConfirm">
+              确认
+            </van-button>
+          </div>
+        </div>
+      </van-popup>
     </div>
   </div>
 </template>
@@ -977,6 +1041,15 @@ async function copyNumbers() {
 .z-num.is-active.z-num--green { background: #52c41a; border-color: #52c41a; color: #fff; }
 .z-num.is-active.z-num--blue { background: #1890ff; border-color: #1890ff; color: #fff; }
 .save-bar { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+
+.manual-input-popup { display: flex; flex-direction: column; height: 100%; padding: 16px; }
+.popup-header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 12px; border-bottom: 1px solid var(--color-border); }
+.popup-title { font-size: 16px; font-weight: 600; color: var(--color-text); }
+.popup-content { flex: 1; padding: 12px 0; }
+.manual-input-textarea { width: 100%; padding: 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: 14px; line-height: 1.6; resize: none; background: #fafafa; color: var(--color-text); box-sizing: border-box; }
+.manual-input-textarea:focus { outline: none; border-color: var(--color-primary); background: #fff; }
+.manual-input-textarea::placeholder { color: var(--color-text-muted); }
+.popup-footer { padding-top: 12px; }
 @media (max-width: 768px) { .grid { grid-template-columns: repeat(6, 1fr); } }
 @media (max-width: 480px) { .grid { grid-template-columns: repeat(5, 1fr); } }
 </style>
