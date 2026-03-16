@@ -8,6 +8,7 @@ import { lotteryDataService, type ZodiacKey, type WuxingKey, type WaveKey } from
 // 手动输入弹窗状态
 const showManualInputDialog = ref(false)
 const manualInputText = ref('')
+const customDelimiter = ref(',')
 
 function openManualInputDialog() {
   showManualInputDialog.value = true
@@ -25,7 +26,9 @@ function handleManualInputConfirm() {
     return
   }
   
-  const numbers = text.split(/[,\s\n]+/).filter(s => s).map(s => {
+  const delimiter = customDelimiter.value || ','
+  const regex = new RegExp(`[,\\s\\n${delimiter.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}]+`)
+  const numbers = text.split(regex).filter(s => s).map(s => {
     const num = parseInt(s, 10)
     return isNaN(num) ? null : num
   }).filter(n => n !== null && n >= 1 && n <= 49) as number[]
@@ -945,19 +948,35 @@ async function copyNumbers() {
         <van-button type="danger" block plain @click="deleteSaved">删除本地记录</van-button>
       </div>
 
-      <van-popup v-model:show="showManualInputDialog" position="bottom" round :style="{ height: '60%' }" @close="closeManualInputDialog">
+      <van-popup 
+        v-model:show="showManualInputDialog" 
+        position="bottom" 
+        round 
+        closeable
+        :style="{ height: 'auto', maxHeight: '90vh', paddingBottom: 'env(safe-area-inset-bottom)' }" 
+        @close="closeManualInputDialog"
+      >
         <div class="manual-input-popup">
           <div class="popup-header">
             <span class="popup-title">手动输入号码</span>
-            <van-icon name="cross" size="20" @click="closeManualInputDialog" />
           </div>
           <div class="popup-content">
             <textarea
               v-model="manualInputText"
               class="manual-input-textarea"
-              placeholder="请输入号码，多个号码用逗号、空格或换行分隔，支持1-49的数字"
-              rows="8"
+              placeholder="请输入号码，多个号码用逗号、空格、换行或英文句号分隔，支持1-49的数字"
+              rows="6"
             ></textarea>
+            <div class="delimiter-setting">
+              <span class="delimiter-label">自定义分隔符：</span>
+              <input
+                v-model="customDelimiter"
+                type="text"
+                class="delimiter-input"
+                placeholder="请输入分隔符"
+                maxlength="5"
+              />
+            </div>
           </div>
           <div class="popup-footer">
             <van-button size="large" type="primary" block @click="handleManualInputConfirm">
@@ -1042,14 +1061,19 @@ async function copyNumbers() {
 .z-num.is-active.z-num--blue { background: #1890ff; border-color: #1890ff; color: #fff; }
 .save-bar { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
 
-.manual-input-popup { display: flex; flex-direction: column; height: 100%; padding: 16px; }
+.manual-input-popup { display: flex; flex-direction: column; padding: 16px; padding-bottom: calc(48px + env(safe-area-inset-bottom)); box-sizing: border-box; }
 .popup-header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 12px; border-bottom: 1px solid var(--color-border); }
 .popup-title { font-size: 16px; font-weight: 600; color: var(--color-text); }
-.popup-content { flex: 1; padding: 12px 0; }
-.manual-input-textarea { width: 100%; padding: 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: 14px; line-height: 1.6; resize: none; background: #fafafa; color: var(--color-text); box-sizing: border-box; }
+.popup-content { flex: 1; padding: 12px 0; min-height: 120px; }
+.manual-input-textarea { width: 100%; padding: 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: 14px; line-height: 1.6; resize: none; background: #fafafa; color: var(--color-text); box-sizing: border-box; min-height: 100px; }
 .manual-input-textarea:focus { outline: none; border-color: var(--color-primary); background: #fff; }
 .manual-input-textarea::placeholder { color: var(--color-text-muted); }
-.popup-footer { padding-top: 12px; }
+.popup-footer { padding-top: 8px; }
+.delimiter-setting { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--color-border); }
+.delimiter-label { font-size: 13px; color: var(--color-text-muted); white-space: nowrap; }
+.delimiter-input { flex: 1; padding: 8px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: 14px; background: #fafafa; color: var(--color-text); box-sizing: border-box; }
+.delimiter-input:focus { outline: none; border-color: var(--color-primary); background: #fff; }
+.delimiter-input::placeholder { color: var(--color-text-muted); }
 @media (max-width: 768px) { .grid { grid-template-columns: repeat(6, 1fr); } }
 @media (max-width: 480px) { .grid { grid-template-columns: repeat(5, 1fr); } }
 </style>
