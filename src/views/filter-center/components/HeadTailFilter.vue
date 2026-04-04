@@ -1,7 +1,7 @@
 <script setup lang="ts">
 defineOptions({ name: 'HeadTailFilter' })
 import { ref, computed } from 'vue'
-import { showToast, showConfirmDialog } from 'vant'
+import { confirmDialog, toast } from '@/utils/feedback'
 
 const activeTab = ref<'head' | 'tail'>('head')
 
@@ -30,9 +30,9 @@ function clearCurrent() {
 
 async function copySelected() {
   const list = activeTab.value === 'head' ? selectedHeads.value : selectedUnits.value
-  if (list.length === 0) { try { showToast('暂无选择') } catch {} return }
+  if (list.length === 0) { toast('暂无选择'); return }
   const text = list.join('.')
-  try { await navigator.clipboard.writeText(text); try { showToast('复制成功') } catch {} } catch { try { showToast('复制失败') } catch {} }
+  try { await navigator.clipboard.writeText(text); toast('复制成功') } catch { toast('复制失败') }
 }
 
 const groupsHead = ref<number[][]>([])
@@ -40,27 +40,27 @@ const groupsUnit = ref<number[][]>([])
 
 function confirmGroup() {
   if (activeTab.value === 'head') {
-    if (selectedHeads.value.length === 0) { try { showToast('请先选择头数') } catch {} return }
+    if (selectedHeads.value.length === 0) { toast('请先选择头数'); return }
     groupsHead.value.push([...selectedHeads.value])
     selectedHeads.value = []
-    try { showToast('已添加一组') } catch {}
+    toast('已添加一组')
   } else {
-    if (selectedUnits.value.length === 0) { try { showToast('请先选择尾数') } catch {} return }
+    if (selectedUnits.value.length === 0) { toast('请先选择尾数'); return }
     groupsUnit.value.push([...selectedUnits.value])
     selectedUnits.value = []
-    try { showToast('已添加一组') } catch {}
+    toast('已添加一组')
   }
 }
 
 function deleteGroup(index: number) {
   if (activeTab.value === 'head') groupsHead.value.splice(index, 1)
   else groupsUnit.value.splice(index, 1)
-  try { showToast('已删除该组') } catch {}
+  toast('已删除该组')
 }
 
 async function clearAllGroups() {
   try {
-    await showConfirmDialog({
+    await confirmDialog({
       title: '确认操作',
       message: '确定要清空所有组吗？此操作不可撤销',
       confirmButtonText: '确定',
@@ -69,7 +69,7 @@ async function clearAllGroups() {
     })
     if (activeTab.value === 'head') groupsHead.value = []
     else groupsUnit.value = []
-    try { showToast('所有组已成功清空') } catch {}
+    toast('所有组已成功清空')
   } catch {}
 }
 
@@ -94,7 +94,7 @@ defineExpose({
         // Just clear selection for "refresh" or reload data if there was async data
         selectedHeads.value = []
         selectedUnits.value = []
-        showToast('已刷新头尾筛选')
+        toast('已刷新头尾筛选')
     }
 })
 </script>
@@ -190,10 +190,10 @@ defineExpose({
 .content { padding: 12px; padding-bottom: 80px; }
 .selected-card { background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-3); box-shadow: var(--shadow-soft); }
 .selected-head { display: flex; align-items: center; justify-content: space-between; }
-.selected-title { font-size: 14px; color: #222; }
+.selected-title { font-size: 14px; color: var(--color-text); }
 .number-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .tag { display: inline-flex; align-items: center; justify-content: center; min-width: 48px; height: 36px; padding: 0 8px; border-radius: 999px; font-weight: 600; font-size: 14px; }
-.tag--selected { background: #1989fa; color: #fff; }
+.tag--selected { background: var(--color-primary); color: #fff; }
 .actions { display: flex; gap: 8px; margin-top: 10px; }
 .tabs-section { margin-top: 12px; background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-3); }
 .grid-section { margin-top: 12px; background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-3); }
@@ -205,12 +205,12 @@ defineExpose({
 
 .groups-section { margin-top: 24px; background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-3); box-shadow: var(--shadow-soft); }
 .groups-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-.section-title { color: #000; }
+.section-title { color: var(--color-text); }
 .groups { display: flex; flex-direction: column; gap: 12px; }
 .group { display: flex; flex-direction: column; gap: 6px; }
 .group-title { font-size: 13px; color: var(--color-text-muted); }
 .group-tags { display: flex; flex-wrap: wrap; gap: 8px; }
-.empty { font-size: 13px; color: #888; }
+.empty { font-size: 13px; color: var(--color-text-muted); }
 
 .group-head { display: flex; align-items: center; justify-content: space-between; }
 .group-delete-btn { min-width: auto; width: 28px; height: 28px; padding: 0; border-radius: 999px; }
@@ -219,7 +219,7 @@ defineExpose({
 .stats { display: flex; flex-direction: column; gap: 10px; }
 .stat-row { display: grid; grid-template-columns: 60px 1fr 80px; align-items: center; gap: 8px; }
 .stat-label { font-size: 14px; color: var(--color-text); }
-.stat-bar { height: 10px; background: #f0f0f0; border-radius: var(--radius-full); overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,.06); }
+.stat-bar { height: 10px; background: #f3f4f6; border-radius: var(--radius-full); overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,.06); }
 .stat-fill { height: 100%; background: var(--color-primary); transition: width .25s ease; }
 .stat-meta { text-align: right; font-size: 12px; color: var(--color-text-muted); }
 

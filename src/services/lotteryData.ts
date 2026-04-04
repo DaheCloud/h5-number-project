@@ -37,6 +37,13 @@ const WAVE_MAP: Record<string, WaveKey> = {
   '红': 'red', '蓝': 'blue', '绿': 'green',
 };
 
+type ZodiacAttributeSets = Record<string, string[]>;
+type ZodiacAttributeGroups = Record<string, string[][]>;
+
+const categoryData = (rawData as any).categories ?? {};
+const zodiacAttributeSets = ((rawData as any).zodiacAttributes?.sets ?? {}) as ZodiacAttributeSets;
+const zodiacAttributeGroups = ((rawData as any).zodiacAttributes?.groups ?? {}) as ZodiacAttributeGroups;
+
 // Singleton Service
 class LotteryDataService {
   private numbers: LotteryNumber[] = [];
@@ -51,7 +58,7 @@ class LotteryDataService {
 
     try {
       // Validation basic structure
-      if (!rawData || !rawData['生肖'] || !rawData['五行'] || !rawData['波色']) {
+      if (!rawData || !categoryData.zodiac || !categoryData.wuxing || !categoryData.wave) {
         console.error('Data source is missing required categories');
         return;
       }
@@ -63,34 +70,34 @@ class LotteryDataService {
       }
 
       // Populate data from JSON categories
-      this.populateCategory(rawData['生肖'], (id, key) => {
+      this.populateCategory(categoryData.zodiac, (id, key) => {
         const enKey = ZODIAC_MAP[key];
         if (enKey) map.get(id)!.zodiac = { key: enKey, label: key };
       });
 
-      this.populateCategory(rawData['五行'], (id, key) => {
+      this.populateCategory(categoryData.wuxing, (id, key) => {
         const enKey = WUXING_MAP[key];
         if (enKey) map.get(id)!.wuxing = { key: enKey, label: key };
       });
 
-      this.populateCategory(rawData['波色'], (id, key) => {
+      this.populateCategory(categoryData.wave, (id, key) => {
         const enKey = WAVE_MAP[key];
         if (enKey) map.get(id)!.wave = { key: enKey, label: key };
       });
       
-      this.populateCategory(rawData['五门'], (id, key) => {
+      this.populateCategory(categoryData.men, (id, key) => {
         map.get(id)!.men = key;
       });
 
-      this.populateCategory(rawData['段位'], (id, key) => {
+      this.populateCategory(categoryData.duan, (id, key) => {
         map.get(id)!.duan = key;
       });
 
-      this.populateCategory(rawData['合数'], (id, key) => {
+      this.populateCategory(categoryData.sum, (id, key) => {
         map.get(id)!.heShu = key;
       });
 
-      this.populateCategory(rawData['合单双'], (id, key) => {
+      this.populateCategory(categoryData.sumParity, (id, key) => {
         map.get(id)!.heDanShuang = key;
       });
 
@@ -164,6 +171,24 @@ class LotteryDataService {
 
   public getRawData() {
       return rawData;
+  }
+
+  public getOtherAttributeZodiacs(attrName: string): string[] {
+      const direct = zodiacAttributeSets[attrName];
+      if (Array.isArray(direct)) {
+        return [...direct];
+      }
+
+      const groups = zodiacAttributeGroups[attrName];
+      if (Array.isArray(groups)) {
+        return Array.from(new Set(groups.flat().filter((item): item is string => typeof item === 'string')));
+      }
+
+      return [];
+  }
+
+  public getOtherAttributeOptions(): string[] {
+      return [...Object.keys(zodiacAttributeSets), ...Object.keys(zodiacAttributeGroups)];
   }
 }
 

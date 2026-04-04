@@ -1,8 +1,8 @@
 <script setup lang="ts">
 defineOptions({ name: 'ZodiacFilter' })
 import { ref, computed } from 'vue'
-import { showToast, showConfirmDialog } from 'vant'
 import { ALL_ZODIACS, addGroup, computeRanking } from '@/utils/zodiac'
+import { confirmDialog, toast } from '@/utils/feedback'
 
 const zodiacs = ALL_ZODIACS
 
@@ -21,26 +21,26 @@ function clearAll() {
 
 async function copySelected() {
   if (selected.value.length === 0) {
-    showToast('暂无选择')
+    toast('暂无选择')
     return
   }
   const text = selected.value.join('.')
   try {
     await navigator.clipboard.writeText(text)
-    showToast('复制成功')
+    toast('复制成功')
   } catch {
-    showToast('复制失败')
+    toast('复制失败')
   }
 }
 
 function confirmGroup() {
   if (selected.value.length === 0) {
-    showToast('请先选择生肖')
+    toast('请先选择生肖')
     return
   }
   groups.value = addGroup(groups.value, selected.value)
   selected.value = []
-  showToast('已添加一组')
+  toast('已添加一组')
 }
 
 // const totalCount = computed(() => groups.value.reduce((s, g) => s + g.length, 0))
@@ -48,7 +48,7 @@ const ranking = computed(() => computeRanking(groups.value))
 
 async function clearAllGroups() {
   try {
-    await showConfirmDialog({
+    await confirmDialog({
       title: '确认操作',
       message: '确定要清空所有组吗？此操作不可撤销',
       confirmButtonText: '确定',
@@ -57,20 +57,20 @@ async function clearAllGroups() {
     })
     groups.value = []
     selected.value = []
-    showToast('所有组已成功清空')
+    toast('所有组已成功清空')
   } catch {}
 }
 
 function deleteGroup(index: number) {
   groups.value.splice(index, 1)
-  try { showToast('已删除该组') } catch {}
+  toast('已删除该组')
 }
 
 // Unified refresh
 defineExpose({
     refresh: () => {
         selected.value = []
-        showToast('已刷新生肖筛选')
+        toast('已刷新生肖筛选')
     }
 })
 </script>
@@ -160,10 +160,10 @@ defineExpose({
 .content { padding: 12px; padding-bottom: 80px; }
 .selected-card { background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-3); box-shadow: var(--shadow-soft); }
 .selected-head { display: flex; align-items: center; justify-content: space-between; }
-.selected-title { font-size: 14px; color: #222; }
+.selected-title { font-size: 14px; color: var(--color-text); }
 .number-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .tag { display: inline-flex; align-items: center; justify-content: center; min-width: 48px; height: 36px; padding: 0 8px; border-radius: 999px; font-weight: 600; font-size: 14px; }
-.tag--selected { background: #1989fa; color: #fff; }
+.tag--selected { background: var(--color-primary); color: #fff; }
 .actions { display: flex; gap: 8px; margin-top: 10px; }
 .grid-section { margin-top: 12px; background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-3); }
 .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
@@ -175,12 +175,12 @@ defineExpose({
 
 .groups-section { margin-top: 24px; background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-3); box-shadow: var(--shadow-soft); }
 .groups-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-.section-title { color: #000; }
+.section-title { color: var(--color-text); }
 .groups { display: flex; flex-direction: column; gap: 12px; }
 .group { display: flex; flex-direction: column; gap: 6px; }
 .group-title { font-size: 13px; color: var(--color-text-muted); }
 .group-tags { display: flex; flex-wrap: wrap; gap: 8px; }
-.empty { font-size: 13px; color: #888; }
+.empty { font-size: 13px; color: var(--color-text-muted); }
 
 .group-head { display: flex; align-items: center; justify-content: space-between; }
 .group-delete-btn { min-width: auto; width: 28px; height: 28px; padding: 0; border-radius: 999px; }
@@ -189,7 +189,7 @@ defineExpose({
 .stats { display: flex; flex-direction: column; gap: 10px; }
 .stat-row { display: grid; grid-template-columns: 60px 1fr 80px; align-items: center; gap: 8px; }
 .stat-label { font-size: 14px; color: var(--color-text); }
-.stat-bar { height: 10px; background: #f0f0f0; border-radius: var(--radius-full); overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,.06); }
+.stat-bar { height: 10px; background: #f3f4f6; border-radius: var(--radius-full); overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,.06); }
 .stat-fill { height: 100%; background: var(--color-primary); transition: width .25s ease; }
 .stat-meta { text-align: right; font-size: 12px; color: var(--color-text-muted); }
 </style>

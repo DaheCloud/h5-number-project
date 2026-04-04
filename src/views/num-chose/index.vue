@@ -1,9 +1,9 @@
 <script setup lang="ts">
 defineOptions({ name: 'NumChosePage' })
 import { ref, computed, onMounted, watch } from 'vue'
-import { showToast } from 'vant'
 import NumberButton from './components/NumberButton.vue'
 import { lotteryDataService, type ZodiacKey, type WuxingKey, type WaveKey } from '../../services/lotteryData'
+import { toast } from '@/utils/feedback'
 
 // 手动输入弹窗状态
 const showManualInputDialog = ref(false)
@@ -22,7 +22,7 @@ function closeManualInputDialog() {
 function handleManualInputConfirm() {
   const text = manualInputText.value.trim()
   if (!text) {
-    showToast('请输入号码')
+    toast('请输入号码')
     return
   }
   
@@ -34,7 +34,7 @@ function handleManualInputConfirm() {
   }).filter(n => n !== null && n >= 1 && n <= 49) as number[]
 
   if (numbers.length === 0) {
-    showToast('未识别到有效号码(1-49)')
+    toast('未识别到有效号码(1-49)')
     return
   }
 
@@ -45,7 +45,7 @@ function handleManualInputConfirm() {
   }
   selectedNumbers.value = Array.from(existingSet).sort((a, b) => a - b)
   
-  showToast(`已添加 ${uniqueNumbers.length} 个号码`)
+  toast(`已添加 ${uniqueNumbers.length} 个号码`)
   closeManualInputDialog()
 }
 
@@ -162,8 +162,8 @@ const conditionGroups: { label: string; options: string[] }[] = [
   { label: '尾数', options: ['0尾', '1尾', '2尾', '3尾', '4尾', '5尾', '6尾', '7尾', '8尾', '9尾', '大尾', '小尾'] },
   { label: '头单双', options: ['0头单', '1头单', '2头单', '3头单', '4头单', '0头双', '1头双', '2头双', '3头双', '4头双'] },
   { label: '合尾', options: ['0合尾', '1合尾', '2合尾', '3合尾', '4合尾', '5合尾', '6合尾', '7合尾', '8合尾', '9合尾'] },
-  { label: '天肖组合', options: ['天肖', '左肖', '前肖', '独字肖', '阴肖'] },
-  { label: '地肖组合', options: ['地肖', '右肖', '后肖', '合字肖', '阳肖'] },
+  { label: '天肖组合', options: ['天肖', '左肖', '前肖', '阴肖', '家肖'] },
+  { label: '地肖组合', options: ['地肖', '右肖', '后肖', '阳肖', '野肖'] },
 ]
 const selectedConditionOptions = ref<string[]>([])
 function toggleConditionOption(opt: string) {
@@ -183,31 +183,18 @@ const zhToKey: Record<string, ZodiacKey> = {
 
 const allIds = computed(() => numbers.value.map(n => n.id))
 
-// 特殊属性映射（从 data.json 的 '其它属性' 获取会更好，但这里简化处理逻辑，依然保留部分逻辑映射）
-// 注意：新版 data.json 有 '其它属性'，可以通过 service 获取。
-// 为保持兼容性，这里尽量复用 service 的数据。
-const rawData = lotteryDataService.getRawData() || {}
-const otherAttrs = (rawData['其它属性'] || {}) as Record<string, string[]>
-
 function getIdsByOtherAttr(key: string): number[] {
-    const zodiacs = otherAttrs[key] || []
+    const zodiacs = lotteryDataService.getOtherAttributeZodiacs(key)
     if (!zodiacs.length) return []
-    // zodiacs is ["鼠", "牛"...] or ["鼠龙猴"...]
-    // Need to handle combo strings like "鼠龙猴"
     const targetKeys: ZodiacKey[] = []
-    
-    // Flatten the zodiac list (handle "鼠龙猴" -> ["鼠","龙","猴"])
-    const flatZodiacs = new Set<string>();
+    const flatZodiacs = new Set<string>()
     zodiacs.forEach(str => {
-        // Try to match each char
-        for (const char of str) {
-            if (zhToKey[char]) flatZodiacs.add(char);
-        }
-    });
+        if (zhToKey[str]) flatZodiacs.add(str)
+    })
 
     flatZodiacs.forEach(z => {
-        if (zhToKey[z]) targetKeys.push(zhToKey[z]);
-    });
+        if (zhToKey[z]) targetKeys.push(zhToKey[z])
+    })
 
     return targetKeys.flatMap(k => numbersByZodiac.value[k] || [])
 }
@@ -252,9 +239,8 @@ function idsForOption(opt: string): number[] {
   const attrMap: Record<string, string> = {
       '天肖': '天肖', '地肖': '地肖',
       '家肖': '家禽', '野肖': '野兽', // UI says 家肖/野肖, JSON says 家禽/野兽
-      '左肖': '左肖', '右肖': '右肖', // JSON might not have these, assume standard fallback if missing
+      '左肖': '左肖', '右肖': '右肖',
       '前肖': '前肖', '后肖': '后肖',
-      '独字肖': '独字肖', '合字肖': '合字肖',
       '阴肖': '阴性', '阳肖': '阳性', // JSON says 阴性/阳性
   }
   
@@ -263,17 +249,6 @@ function idsForOption(opt: string): number[] {
       const ids = getIdsByOtherAttr(attrMap[opt]);
       if (ids.length) return ids;
   }
-  // If not in JSON, fallback to hardcoded keys if necessary (removed hardcoded keys to follow instructions)
-  // But wait, if JSON doesn't have "左肖", we return empty? 
-  // User asked to remove hardcoded data. 
-  // Assuming JSON has these or we accept they are empty.
-  // Actually, let's check JSON content.
-  // JSON has: 家禽, 野兽, 单笔, 双笔, 女肖, 男肖, 吉美, 凶丑, 天肖, 地肖, 阴性, 阳性, 白边, 黑中, 红肖, 蓝肖, 绿肖, 三合, 六合, 琴, 棋, 书, 画, 五福肖
-  // Missing: 左肖, 右肖, 前肖, 后肖, 独字肖, 合字肖. 
-  // These are often standard zodiac mappings. If they are missing in JSON, I should add them to JSON generator or accept they won't work.
-  // Given I cannot easily add them without verifying rules, I will leave them empty or use fallback if I knew the rule.
-  // For now, I will implement logic based on available data.
-
   // 头尾数 (Calculated)
   if (opt === '大尾') return all.filter(n => n % 10 >= 5)
   if (opt === '小尾') return all.filter(n => n % 10 <= 4)
@@ -454,7 +429,7 @@ function clearAllFilters() {
   selectedMenFilter.value = []
   selectedDuanFilter.value = []
   selectedHeShuFilter.value = []
-  try { showToast('已清空所有过滤') } catch { }
+  toast('已清空所有过滤')
 }
 
 const filteredGridNumbers = computed(() => numbers.value.slice())
@@ -545,16 +520,16 @@ async function saveAndCopy() {
   }
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)) } catch { }
   const text = filteredSelectedRecords.value.map((r: any) => pad2(Number(r.id))).join('.')
-  if (!text) { try { showToast('暂无可复制的过滤结果') } catch { } return }
-  try { await navigator.clipboard.writeText(text); try { showToast('已复制过滤结果,并保存') } catch { } } catch { }
+  if (!text) { toast('暂无可复制的过滤结果'); return }
+  try { await navigator.clipboard.writeText(text); toast('已复制过滤结果,并保存') } catch { }
 }
 
 function deleteSaved() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) { try { showToast('暂无可删除记录') } catch { } return }
+    if (!raw) { toast('暂无可删除记录'); return }
     localStorage.removeItem(STORAGE_KEY)
-    try { showToast('已删除本地保存记录') } catch { }
+    toast('已删除本地保存记录')
   } catch { }
 }
 
@@ -610,7 +585,7 @@ async function copyNumbers() {
     const sortedNumbers = getSortedNumbers()
     const numbersString = sortedNumbers.join('.')
     await navigator.clipboard.writeText(numbersString)
-    try { showToast('复制成功') } catch { }
+    toast('复制成功')
   } catch (error) { }
 }
 </script>
@@ -618,7 +593,7 @@ async function copyNumbers() {
 <template>
   <div class="page num-chose-1">
     <header class="header-fixed">
-      <van-nav-bar title="选号助手">
+      <van-nav-bar title="选号助手" class="top-nav">
         <template #right>
           <van-icon name="setting-o" />
         </template>
@@ -993,40 +968,47 @@ async function copyNumbers() {
 /* Same CSS as before */
 .page { display: flex; flex-direction: column; min-height: 100%; }
 .header-fixed { position: sticky; top: 0; z-index: 1000; }
-.content { padding: 12px; padding-bottom: 80px; background: #f7f7f7; }
+.top-nav {
+  --van-nav-bar-background: #ffffff;
+  --van-nav-bar-title-text-color: #1f2533;
+  --van-nav-bar-icon-color: #1f2533;
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: var(--shadow-soft);
+}
+.content { padding: 12px; padding-bottom: 80px; background: var(--color-bg); }
 .selected-card { background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-3); box-shadow: var(--shadow-soft); }
 .selected-card.sticky-enabled { position: sticky; top: 46px; z-index: 1000; backdrop-filter: saturate(180%) blur(6px); background: color-mix(in oklab, var(--color-surface), white 90%); border-bottom: 1px solid var(--color-border); box-shadow: 0 2px 12px 0 #9c9c9c; }
 .selected-head { display: flex; align-items: center; justify-content: space-between; }
 .head-actions { display: inline-flex; align-items: center; gap: 8px; }
 .head-tip { font-size: 12px; color: var(--color-text-muted); }
-.selected-title { font-size: 14px; color: #222; }
+.selected-title { font-size: 14px; color: var(--color-text); }
 .selected-title-group { display: inline-flex; align-items: center; }
 .selected-count { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; margin-left: 8px; padding: 0 6px; border-radius: 999px; border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text-muted); font-size: 12px; line-height: 1; }
 .number-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .tag { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 999px; font-weight: 600; font-size: 14px; cursor: pointer; }
-.tag--selected { background: #1989fa; color: #fff; }
-.tag--red { background: #ff4d4f; color: #fff; }
-.tag--green { background: #52c41a; color: #fff; }
-.tag--blue { background: #1890ff; color: #fff; }
+.tag--selected { background: var(--color-primary); color: #fff; }
+.tag--red { background: var(--color-red); color: #fff; }
+.tag--green { background: var(--color-green); color: #fff; }
+.tag--blue { background: var(--color-blue); color: #fff; }
 .actions { display: flex; gap: 8px; margin-top: 10px; }
 .tabs-section { margin-top: 12px; }
 .numbers-grid { margin-top: 12px; background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-3); }
 .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--space-2); justify-items: center; align-items: center; }
-.num-btn { height: 40px; border-radius: 999px; border: 1px solid #e5e5e5; background: #fff; color: #333; }
+.num-btn { height: 40px; border-radius: 999px; border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); }
 .filters { margin-top: 12px; background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-3); }
 .filters-head { display: flex; align-items: center; justify-content: space-between; }
 .section-title { font-size: 14px; color: var(--color-text-muted); }
 .filter-group { margin-top: 12px; }
-.filter-label { font-size: 13px; color: #888; margin-bottom: 8px; }
+.filter-label { font-size: 13px; color: var(--color-text-muted); margin-bottom: 8px; }
 .chip-row { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .chip { padding: 6px 12px; border-radius: var(--radius-full); border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); font-size: 13px; transition: transform .12s ease, box-shadow .12s ease, background-color .12s ease, border-color .12s ease; }
 .chip:hover { box-shadow: var(--shadow-soft); transform: translateY(-1px); }
 .chip:active { transform: translateY(-2px); }
 .chip--active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
 .five-section { margin-top: 12px; background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-3); }
-.element-title { margin-top: 8px; font-size: 14px; color: #333; }
+.element-title { margin-top: 8px; font-size: 14px; color: var(--color-text); }
 .element-numbers { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: 8px; }
-.element-summary { margin-top: 12px; font-size: 12px; color: #666; line-height: 1.6; }
+.element-summary { margin-top: 12px; font-size: 12px; color: var(--color-text-muted); line-height: 1.6; }
 .element-actions { margin-top: 8px; }
 .filters-result { margin-top: 12px; background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-3); }
 .filters-result.sticky-enabled { width: 100%; position: fixed; top: 0px; left: 0px; z-index: 1000; backdrop-filter: saturate(180%) blur(6px); background: color-mix(in oklab, var(--color-surface), white 90%); border-bottom: 1px solid var(--color-border); box-shadow: 0 4px 12px 0 #9c9c9c; }
@@ -1042,36 +1024,36 @@ async function copyNumbers() {
 .condition-section { margin-top: 12px; background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-3); }
 .c-head { display: flex; align-items: center; justify-content: space-between; }
 .c-title { font-size: 16px; color: var(--color-text); }
-.z-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); margin-top: var(--space-3); background: #fafafa; }
+.z-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); margin-top: var(--space-3); background: var(--color-surface-alt); }
 .z-card { position: relative; display: flex; flex-direction: column; align-items: center; gap: var(--space-2); padding: var(--space-2); border-radius: var(--radius-md); transition: transform .2s ease, background-color .2s ease, border-color .2s ease; border: 2px solid var(--color-border); }
 .z-card--active { transform: translateY(-2px); border-color: var(--color-primary); background: color-mix(in oklab, var(--color-primary), white 92%); }
 .z-card--active::after { content: '✓'; position: absolute; top: 6px; right: 6px; width: 20px; height: 20px; border-radius: 999px; background: var(--color-primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; }
-.z-avatar { width: 32px; height: 32px; border-radius: 999px; background: #f3f4f6; display: flex; align-items: center; justify-content: center; border: 3px solid transparent; }
+.z-avatar { width: 32px; height: 32px; border-radius: 999px; background: var(--color-surface-alt); display: flex; align-items: center; justify-content: center; border: 3px solid transparent; }
 .z-card--active .z-avatar { border-color: var(--color-primary); }
 .z-emoji { font-size: 24px; }
 .z-name { font-size: 14px; color: var(--color-text); }
 .z-pill-row { display: flex; flex-wrap: wrap; gap: var(--space-1); justify-content: center; }
 .z-num { min-width: 28px; height: 24px; padding: 0 6px; border-radius: 999px; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text-muted); }
-.z-num--red { border-color: #ff4d4f; color: #ff4d4f; }
-.z-num--green { border-color: #52c41a; color: #52c41a; }
-.z-num--blue { border-color: #1890ff; color: #1890ff; }
+.z-num--red { border-color: var(--color-red); color: var(--color-red); }
+.z-num--green { border-color: var(--color-green); color: var(--color-green); }
+.z-num--blue { border-color: var(--color-blue); color: var(--color-blue); }
 .z-num.is-active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
-.z-num.is-active.z-num--red { background: #ff4d4f; border-color: #ff4d4f; color: #fff; }
-.z-num.is-active.z-num--green { background: #52c41a; border-color: #52c41a; color: #fff; }
-.z-num.is-active.z-num--blue { background: #1890ff; border-color: #1890ff; color: #fff; }
+.z-num.is-active.z-num--red { background: var(--color-red); border-color: var(--color-red); color: #fff; }
+.z-num.is-active.z-num--green { background: var(--color-green); border-color: var(--color-green); color: #fff; }
+.z-num.is-active.z-num--blue { background: var(--color-blue); border-color: var(--color-blue); color: #fff; }
 .save-bar { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
 
 .manual-input-popup { display: flex; flex-direction: column; padding: 16px; padding-bottom: calc(48px + env(safe-area-inset-bottom)); box-sizing: border-box; }
 .popup-header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 12px; border-bottom: 1px solid var(--color-border); }
 .popup-title { font-size: 16px; font-weight: 600; color: var(--color-text); }
 .popup-content { flex: 1; padding: 12px 0; min-height: 120px; }
-.manual-input-textarea { width: 100%; padding: 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: 14px; line-height: 1.6; resize: none; background: #fafafa; color: var(--color-text); box-sizing: border-box; min-height: 100px; }
+.manual-input-textarea { width: 100%; padding: 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: 14px; line-height: 1.6; resize: none; background: var(--color-surface-alt); color: var(--color-text); box-sizing: border-box; min-height: 100px; }
 .manual-input-textarea:focus { outline: none; border-color: var(--color-primary); background: #fff; }
 .manual-input-textarea::placeholder { color: var(--color-text-muted); }
 .popup-footer { padding-top: 8px; }
 .delimiter-setting { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--color-border); }
 .delimiter-label { font-size: 13px; color: var(--color-text-muted); white-space: nowrap; }
-.delimiter-input { flex: 1; padding: 8px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: 14px; background: #fafafa; color: var(--color-text); box-sizing: border-box; }
+.delimiter-input { flex: 1; padding: 8px 12px; border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: 14px; background: var(--color-surface-alt); color: var(--color-text); box-sizing: border-box; }
 .delimiter-input:focus { outline: none; border-color: var(--color-primary); background: #fff; }
 .delimiter-input::placeholder { color: var(--color-text-muted); }
 @media (max-width: 768px) { .grid { grid-template-columns: repeat(6, 1fr); } }

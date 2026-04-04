@@ -2,9 +2,7 @@
 export type ListItem = {
   id: number;
   title: string;
-  description?: string;
-  author?: string;
-  date?: string;
-  image?: string;
+  description: string;
+  hint?: string;
   path: string;
 }

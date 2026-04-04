@@ -3,27 +3,36 @@
 /* ——— 设计系统主题（Tailwind v4 @theme） ——— */
 @theme {
   /* 色板 */
-  --color-primary: #1989fa;              /* 品牌主色（Vant 默认蓝） */
+  --color-primary: #2f3137;              /* 统一主色（中性深灰） */
   --color-success: #52c41a;
   --color-warning: #faad14;
   --color-danger: #ff4d4f;
+  --color-red: #ff4d4f;
+  --color-green: #52c41a;
+  --color-blue: #1890ff;
 
-  --color-bg: #121421;                   /* 页面背景 */
+  --color-bg: #f3f4f6;                   /* 页面背景 */
   --color-surface: #ffffff;              /* 卡片/组件底色 */
+  --color-surface-alt: #f8fafc;          /* 次级容器底色 */
   --color-border: #e5e7eb;               /* 边框中性灰 */
-  --color-text: #333333;                 /* 主要文字 */
-  --color-text-muted: #888888;           /* 次要文字 */
+  --color-text: #1f2937;                 /* 主要文字 */
+  --color-text-muted: #6b7280;           /* 次要文字 */
 
   /* 圆角 */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
   --radius-full: 999px;
 
+  /* 控件高度 */
+  --control-h-sm: 30px;
+  --control-h-md: 32px;
+  --control-h-lg: 40px;
+
   /* 阴影（更柔和） */
-  --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.08);
-  --shadow-card: 0 3px 12px rgba(0, 0, 0, 0.10);
-  --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.14);
+  --shadow-soft: 0 4px 10px rgba(15, 23, 42, 0.06);
+  --shadow-card: 0 8px 16px rgba(15, 23, 42, 0.08);
+  --shadow-hover: 0 12px 24px rgba(15, 23, 42, 0.12);
 
   /* 间距 */
   --space-1: 4px;
@@ -44,9 +53,9 @@
 }
 
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
+  font-family: system-ui, sans-serif;
+  color-scheme: light;
+  color: #111827;
   background-color: var(--color-bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -55,13 +64,6 @@
 }
 
 #app { width: 100vw; height: 100vh; }
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-}
 
 /* 通用组件态样式（可在局部使用） */
 .u-chip {

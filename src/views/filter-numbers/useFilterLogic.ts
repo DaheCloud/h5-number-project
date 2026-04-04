@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue';
 import { lotteryDataService, type LotteryNumber } from '../../services/lotteryData';
+import { toast } from '@/utils/feedback';
 
 export function useFilterLogic() {
   // State
@@ -10,9 +11,7 @@ export function useFilterLogic() {
     allNumbers.value = lotteryDataService.getAllNumbers();
   } catch (error) {
     console.error('Failed to load lottery data:', error);
-    import('vant').then(({ showToast }) => {
-      showToast('数据加载失败，请刷新重试');
-    });
+    toast('数据加载失败，请刷新重试');
   }
 
   const selectedFilters = ref<string[]>([]);
@@ -50,7 +49,6 @@ export function useFilterLogic() {
     if (['阴肖', '阳肖'].includes(filter)) return 'yinYang';
     if (['左肖', '右肖'].includes(filter)) return 'leftRight';
     if (['前肖', '后肖'].includes(filter)) return 'frontBack';
-    if (['独字肖', '合字肖'].includes(filter)) return 'singleMulti';
     
     return 'other';
   };
@@ -81,7 +79,6 @@ export function useFilterLogic() {
       case '阴肖': case '阳肖':
       case '前肖': case '后肖':
       case '左肖': case '右肖':
-      case '独字肖': case '合字肖':
          return checkOtherAttribute(numObj, filter);
       
       case '合单': return numObj.sumOddAndEven === 'odd'; // Service normalized to 'odd'/'even'
@@ -153,10 +150,6 @@ export function useFilterLogic() {
     }
   };
 
-  // Helper to check attributes in "其它属性"
-  const rawData = lotteryDataService.getRawData() || {};
-  const otherAttrs = (rawData['其它属性'] || {}) as Record<string, string[]>;
-  
   const checkOtherAttribute = (numObj: LotteryNumber, attrName: string): boolean => {
       // Map UI filter name to JSON key if needed
       const keyMap: Record<string, string> = {
@@ -165,17 +158,14 @@ export function useFilterLogic() {
           '阴肖': '阴性', '阳肖': '阳性', // JSON uses 阴性/阳性
           // Others might not exist in JSON, handle gracefully
           '前肖': '前肖', '后肖': '后肖',
-          '左肖': '左肖', '右肖': '右肖',
-          '独字肖': '独字肖', '合字肖': '合字肖'
+          '左肖': '左肖', '右肖': '右肖'
       };
       
       const jsonKey = keyMap[attrName] || attrName;
-      const values = otherAttrs[jsonKey];
+      const values = lotteryDataService.getOtherAttributeZodiacs(jsonKey);
       if (!values) return false;
-      
-      // values is list of zodiac names like ["鼠", "牛"] or ["鼠龙猴"]
-      // Check if numObj.zodiac.label is in this list
-      return values.some(v => v.includes(numObj.zodiac.label));
+
+      return values.includes(numObj.zodiac.label);
   };
 
   const getWaveColorById = (id: number): string => {
@@ -258,9 +248,7 @@ export function useFilterLogic() {
   const clearFilters = () => {
     selectedFilters.value = [];
     excludedNumbers.value = [];
-    import('vant').then(({ showToast }) => {
-      showToast('已清空条件');
-    });
+    toast('已清空条件');
   };
 
   const toggleExclusion = (num: string) => {
@@ -279,9 +267,7 @@ export function useFilterLogic() {
         excluded: excludedNumbers.value
       };
       localStorage.setItem('filterSettings', JSON.stringify(settings));
-      import('vant').then(({ showToast }) => {
-        showToast('筛选条件已保存');
-      });
+      toast('筛选条件已保存');
     } catch (e) {
       console.error('Failed to save settings:', e);
     }
@@ -294,16 +280,12 @@ export function useFilterLogic() {
         const settings = JSON.parse(saved);
         selectedFilters.value = settings.filters || [];
         excludedNumbers.value = settings.excluded || [];
-        import('vant').then(({ showToast }) => {
-          showToast('筛选条件已加载');
-        });
+        toast('筛选条件已加载');
       } catch (e) {
         console.error('Failed to parse saved settings');
       }
     } else {
-      import('vant').then(({ showToast }) => {
-        showToast('暂无保存的条件');
-      });
+      toast('暂无保存的条件');
     }
   };
 
