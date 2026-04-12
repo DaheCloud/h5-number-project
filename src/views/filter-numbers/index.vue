@@ -3,6 +3,7 @@ defineOptions({ name: 'FilterNumbersPage' })
 
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import type { PopoverAction } from 'vant'
 import { useFilterLogic } from './useFilterLogic'
 import FilterGroup from './components/FilterGroup.vue'
 import ResultStickyHeader from './components/ResultStickyHeader.vue'
@@ -73,12 +74,12 @@ const collapseAll = () => {
   activeNames.value = []
 }
 
-const moreActions = [
+const moreActions: PopoverAction[] = [
   { text: '保存条件', icon: 'description' },
   { text: '加载条件', icon: 'orders-o' },
   { text: '展开全部', icon: 'arrow-down' },
   { text: '收起全部', icon: 'arrow-up' },
-] as const
+]
 
 const onSelectMoreAction = (action: { text: string }) => {
   if (action.text === '保存条件') {
