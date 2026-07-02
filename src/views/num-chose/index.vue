@@ -4,6 +4,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import NumberButton from './components/NumberButton.vue'
 import { lotteryDataService, type ZodiacKey, type WuxingKey, type WaveKey } from '../../services/lotteryData'
 import { toast } from '@/utils/feedback'
+import { getFilterIds, getOtherAttrIds } from '@/utils/numberMatcher'
 
 // 手动输入弹窗状态
 const showManualInputDialog = ref(false)
@@ -172,122 +173,13 @@ function toggleConditionOption(opt: string) {
   else selectedConditionOptions.value.push(opt)
 }
 function clearAllConditions() { selectedConditionOptions.value = [] }
-function sumDigits(n: number) { return Math.floor(n / 10) + (n % 10) }
-
-// 映射逻辑
-const labelToElement: Record<string, WuxingKey> = { 金: 'metal', 木: 'wood', 水: 'water', 火: 'fire', 土: 'earth' }
-const zhToKey: Record<string, ZodiacKey> = {
-  '鼠': 'rat', '牛': 'ox', '虎': 'tiger', '兔': 'rabbit', '龙': 'dragon', '蛇': 'snake',
-  '马': 'horse', '羊': 'goat', '猴': 'monkey', '鸡': 'rooster', '狗': 'dog', '猪': 'pig',
-}
-
-const allIds = computed(() => numbers.value.map(n => n.id))
-
-function getIdsByOtherAttr(key: string): number[] {
-    const zodiacs = lotteryDataService.getOtherAttributeZodiacs(key)
-    if (!zodiacs.length) return []
-    const targetKeys: ZodiacKey[] = []
-    const flatZodiacs = new Set<string>()
-    zodiacs.forEach(str => {
-        if (zhToKey[str]) flatZodiacs.add(str)
-    })
-
-    flatZodiacs.forEach(z => {
-        if (zhToKey[z]) targetKeys.push(zhToKey[z])
-    })
-
-    return targetKeys.flatMap(k => numbersByZodiac.value[k] || [])
-}
-
-function idsForOption(opt: string): number[] {
-  const all = allIds.value
-  
-  // 五行
-  if (labelToElement[opt]) {
-      return idsByElement.value[labelToElement[opt]] || []
-  }
-
-  // 生肖
-  if (zhToKey[opt]) {
-      return numbersByZodiac.value[zhToKey[opt]] || []
-  }
-
-  // 门数
-  if (/^[1-5]门$/.test(opt)) {
-      return numbers.value.filter(n => n.men === opt).map(n => n.id)
-  }
-
-  // 段位
-  if (/^[1-7]段$/.test(opt)) {
-      return numbers.value.filter(n => n.duan === opt).map(n => n.id)
-  }
-
-  // 合数
-  const heShuMatch = opt.match(/^([0-9]{1,2})合$/)
-  if (heShuMatch && heShuMatch[1]) {
-      const num = parseInt(heShuMatch[1])
-      const key = '合' + String(num).padStart(2, '0')
-      return numbers.value.filter(n => n.heShu === key).map(n => n.id)
-  }
-
-  // 合单双
-  if (opt === '合单') return numbers.value.filter(n => n.heDanShuang === '单').map(n => n.id)
-  if (opt === '合双') return numbers.value.filter(n => n.heDanShuang === '双').map(n => n.id)
-
-  // 其它属性 (天肖, 地肖, 家禽(家肖), 野兽(野肖) etc)
-  // map UI labels to JSON keys
-  const attrMap: Record<string, string> = {
-      '天肖': '天肖', '地肖': '地肖',
-      '家肖': '家禽', '野肖': '野兽', // UI says 家肖/野肖, JSON says 家禽/野兽
-      '左肖': '左肖', '右肖': '右肖',
-      '前肖': '前肖', '后肖': '后肖',
-      '阴肖': '阴性', '阳肖': '阳性', // JSON says 阴性/阳性
-  }
-  
-  if (attrMap[opt]) {
-      // Use data from JSON '其它属性'
-      const ids = getIdsByOtherAttr(attrMap[opt]);
-      if (ids.length) return ids;
-  }
-  // 头尾数 (Calculated)
-  if (opt === '大尾') return all.filter(n => n % 10 >= 5)
-  if (opt === '小尾') return all.filter(n => n % 10 <= 4)
-  const tailMatch = opt.match(/^([0-9])尾$/)
-  if (tailMatch) { const d = Number(tailMatch[1]); return all.filter(n => n % 10 === d) }
-  const headMatch = opt.match(/^([0-9])头$/)
-  if (headMatch) { const d = Number(headMatch[1]); return all.filter(n => Math.floor(n / 10) === d) }
-  
-  // 波色单双
-  const waveOddEven = opt.match(/^(红|绿|蓝)(单|双)$/)
-  if (waveOddEven && waveOddEven[1] && waveOddEven[2]) {
-    const waveMap: Record<string, WaveKey> = { 红: 'red', 绿: 'green', 蓝: 'blue' }
-    const wave = waveMap[waveOddEven[1]]
-    const oe = waveOddEven[2] === '单' ? 'odd' : 'even'
-    return numbers.value.filter(n => n.wave.key === wave && n.oddAndEven === oe).map(n => n.id)
-  }
-
-  // 头单双
-  const headOddEven = opt.match(/^([0-9])头(单|双)$/)
-  if (headOddEven) { 
-      const h = Number(headOddEven[1]); 
-      const isOdd = headOddEven[2] === '单'; 
-      return all.filter(n => Math.floor(n / 10) === h && (n % 2 === (isOdd ? 1 : 0))) 
-  }
-
-  // 合尾
-  const heWei = opt.match(/^([0-9])合尾$/)
-  if (heWei) { const t = Number(heWei[1]); return all.filter(n => sumDigits(n) % 10 === t) }
-
-  return []
-}
-
 const conditionResultNumbers = computed(() => {
   const sets: Set<number>[] = []
   for (const g of conditionGroups) {
     const sel = selectedConditionOptions.value.filter(o => g.options.includes(o))
     if (sel.length > 0) {
       const u = new Set<number>()
-      for (const o of sel) for (const n of idsForOption(o)) u.add(n)
+      for (const o of sel) for (const n of getFilterIds(o)) u.add(n)
       sets.push(u)
     }
   }
@@ -455,13 +347,13 @@ const filteredSelectedRecords = computed(() => {
   if (homeWildFilter.value !== 'all') {
     // 使用 JSON 中的 家禽/野兽 属性
     const key = homeWildFilter.value === 'home' ? '家禽' : '野兽'
-    const allowedIds = new Set(getIdsByOtherAttr(key))
+    const allowedIds = new Set(getOtherAttrIds(key))
     list = list.filter((i: any) => allowedIds.has(i.id))
   }
   
   if (skyEarthFilter.value !== 'all') {
     const key = skyEarthFilter.value === 'sky' ? '天肖' : '地肖'
-    const allowedIds = new Set(getIdsByOtherAttr(key))
+    const allowedIds = new Set(getOtherAttrIds(key))
     list = list.filter((i: any) => allowedIds.has(i.id))
   }
   
@@ -578,7 +470,7 @@ function toggleSortOrder() {
 
 async function copyNumbers() {
   if (selectedNumbers.value.length === 0) {
-    alert('没有选中的号码可复制')
+    toast('没有选中的号码可复制')
     return
   }
   try {

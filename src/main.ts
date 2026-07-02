@@ -7,6 +7,6 @@ import pinia from "./stores";
 import router from "./routes";
 
 createApp(App)
-.use(pinia)
-.use(router)
-.mount("#app");
+  .use(pinia)
+  .use(router)
+  .mount("#app");

@@ -9,17 +9,15 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
   BProgress.start();
-  void from;
   const title = to?.meta?.title
   if (title) {
     document.title = title as string
   }
   next()
 })
-router.afterEach((to) => {
-  void to;
+router.afterEach((_to) => {
   BProgress.done();
 })
 export default router;
