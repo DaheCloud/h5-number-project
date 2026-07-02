@@ -13,12 +13,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     css: {
-        include: /.+/
-    },
-    server: {
-      deps: {
-        inline: ['vant']
-      }
+      include: /.+/
     }
   }
 })

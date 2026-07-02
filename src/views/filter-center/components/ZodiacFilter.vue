@@ -5,191 +5,84 @@ import { ALL_ZODIACS, addGroup, computeRanking } from '@/utils/zodiac'
 import { confirmDialog, toast } from '@/utils/feedback'
 
 const zodiacs = ALL_ZODIACS
-
 const selected = ref<string[]>([])
 const groups = ref<string[][]>([])
-
-function toggle(name: string) {
-  const i = selected.value.indexOf(name)
-  if (i > -1) selected.value.splice(i, 1)
-  else selected.value.push(name)
-}
-
-function clearAll() {
-  selected.value = []
-}
-
-async function copySelected() {
-  if (selected.value.length === 0) {
-    toast('暂无选择')
-    return
-  }
-  const text = selected.value.join('.')
-  try {
-    await navigator.clipboard.writeText(text)
-    toast('复制成功')
-  } catch {
-    toast('复制失败')
-  }
-}
-
-function confirmGroup() {
-  if (selected.value.length === 0) {
-    toast('请先选择生肖')
-    return
-  }
-  groups.value = addGroup(groups.value, selected.value)
-  selected.value = []
-  toast('已添加一组')
-}
-
-// const totalCount = computed(() => groups.value.reduce((s, g) => s + g.length, 0))
 const ranking = computed(() => computeRanking(groups.value))
 
+function toggle(name: string) { const i = selected.value.indexOf(name); i > -1 ? selected.value.splice(i,1) : selected.value.push(name) }
+function clearAll() { selected.value = [] }
+async function copySelected() {
+  if (selected.value.length===0) { toast('暂无选择'); return }
+  try { await navigator.clipboard.writeText(selected.value.join('.')); toast('复制成功') } catch { toast('复制失败') }
+}
+function confirmGroup() {
+  if (selected.value.length===0) { toast('请先选择生肖'); return }
+  groups.value = addGroup(groups.value, selected.value); selected.value = []; toast('已添加一组')
+}
 async function clearAllGroups() {
-  try {
-    await confirmDialog({
-      title: '确认操作',
-      message: '确定要清空所有组吗？此操作不可撤销',
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      showCancelButton: true,
-    })
-    groups.value = []
-    selected.value = []
-    toast('所有组已成功清空')
-  } catch {}
+  const confirmed = await confirmDialog({ title:'确认操作', message:'确定要清空所有组吗？此操作不可撤销', confirmText:'确定', cancelText:'取消', showCancel:true })
+  if (confirmed) { groups.value=[]; selected.value=[]; toast('所有组已成功清空') }
 }
-
-function deleteGroup(index: number) {
-  groups.value.splice(index, 1)
-  toast('已删除该组')
-}
-
-// Unified refresh
-defineExpose({
-    refresh: () => {
-        selected.value = []
-        toast('已刷新生肖筛选')
-    }
-})
+function deleteGroup(index:number) { groups.value.splice(index,1); toast('已删除该组') }
+defineExpose({ refresh: () => { selected.value=[]; toast('已刷新生肖筛选') } })
 </script>
 
 <template>
-  <div class="zodiac-filter-comp">
-    <div class="content">
-      <section class="selected-card">
-        <div class="selected-head">
-          <span class="selected-title">已选生肖</span>
+  <div class="flex flex-col h-full pb-20">
+    <div class="p-3 space-y-3">
+      <!-- Selected -->
+      <div class="bg-white rounded-2xl p-3 shadow-sm border border-gray-200">
+        <span class="text-sm text-gray-700">已选生肖</span>
+        <div class="flex flex-wrap gap-2 mt-2">
+          <span v-for="n in selected" :key="n" class="inline-flex items-center justify-center min-w-[48px] h-9 px-2 rounded-full bg-[#2f3137] text-white font-semibold text-sm">{{ n }}</span>
+          <span v-if="selected.length===0" class="text-sm text-gray-400">暂无选择</span>
         </div>
-        <div class="number-tags">
-          <span v-for="n in selected" :key="n" class="tag tag--selected">{{ n }}</span>
-          <span v-if="selected.length === 0" class="tag tag--empty">暂无选择</span>
+        <div class="flex gap-2 mt-3">
+          <button class="btn btn-sm btn-outline btn-secondary" @click="copySelected">复制</button>
+          <button class="btn btn-sm btn-ghost" @click="clearAll">清空</button>
+          <button class="btn btn-sm btn-primary" @click="confirmGroup">确认本组</button>
         </div>
-        <div class="actions">
-          <van-button size="small" plain type="primary" @click="copySelected">复制</van-button>
-          <van-button size="small" plain @click="clearAll">清空</van-button>
-          <van-button size="small" type="primary" @click="confirmGroup">确认本组</van-button>
-        </div>
-      </section>
+      </div>
 
-      <section class="grid-section">
-        <div class="grid">
-          <button
-            v-for="name in zodiacs"
-            :key="name"
-            type="button"
-            class="chip"
-            :class="selected.includes(name) ? 'chip--active' : ''"
-            @click="toggle(name)"
-          >
-            {{ name }}
-          </button>
+      <!-- Grid -->
+      <div class="bg-white rounded-2xl p-3 border border-gray-200">
+        <div class="grid grid-cols-3 gap-2">
+          <button v-for="name in zodiacs" :key="name" type="button"
+            class="u-chip" :class="selected.includes(name)?'is-active':''" @click="toggle(name)">{{ name }}</button>
         </div>
-      </section>
+      </div>
 
-  <section class="groups-section">
-        <div class="groups-head">
-          <h3 class="section-title">已添加的组</h3>
-          <van-button size="small" type="danger" plain @click="clearAllGroups">
-            <van-icon name="delete" />
-            <span class="ml-4">清空所有组</span>
-          </van-button>
+      <!-- Groups -->
+      <div class="bg-white rounded-2xl p-3 shadow-sm border border-gray-200">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-semibold text-gray-800">已添加的组</h3>
+          <button class="btn btn-xs btn-soft btn-error" @click="clearAllGroups">清空所有组</button>
         </div>
-        <div v-if="groups.length === 0" class="empty">暂无分组</div>
-        <div v-else class="groups">
-          <div v-for="(g, i) in groups" :key="i" class="group">
-            <div class="group-head">
-              <span class="group-title">第{{ i + 1 }}组</span>
-              <van-button
-                icon="delete"
-                size="mini"
-                type="danger"
-                plain
-                class="group-delete-btn"
-                @click="deleteGroup(i)"
-              />
+        <div v-if="groups.length===0" class="text-sm text-gray-400">暂无分组</div>
+        <div v-else class="space-y-3">
+          <div v-for="(g,i) in groups" :key="i">
+            <div class="flex items-center justify-between"><span class="text-sm text-gray-500">第{{ i+1 }}组</span>
+              <button class="btn btn-xs btn-circle btn-ghost text-error" @click="deleteGroup(i)"><span class="icon-[tabler--trash] size-3.5"></span></button>
             </div>
-            <div class="group-tags">
-              <span v-for="n in g" :key="n" class="tag tag--selected">{{ n }}</span>
+            <div class="flex flex-wrap gap-2 mt-1">
+              <span v-for="n in g" :key="n" class="inline-flex items-center justify-center min-w-[48px] h-9 px-2 rounded-full bg-[#2f3137] text-white font-semibold text-sm">{{ n }}</span>
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      <section class="stats-section">
-        <h3 class="section-title">统计结果</h3>
-        <div v-if="ranking.length === 0" class="empty">暂无数据</div>
-        <div v-else class="stats">
-          <div v-for="item in ranking" :key="item.name" class="stat-row">
-            <div class="stat-label">{{ item.name }}</div>
-            <div class="stat-bar">
-              <div class="stat-fill" :style="{ width: Math.round(item.ratio * 100) + '%' }"></div>
-            </div>
-            <div class="stat-meta">{{ (item.ratio * 100).toFixed(1) }}%（{{ item.count }}）</div>
+      <!-- Stats -->
+      <div class="bg-white rounded-2xl p-3 border border-gray-200">
+        <h3 class="text-sm font-semibold text-gray-800 mb-3">统计结果</h3>
+        <div v-if="ranking.length===0" class="text-sm text-gray-400">暂无数据</div>
+        <div v-else class="space-y-2">
+          <div v-for="item in ranking" :key="item.name" class="grid grid-cols-[60px_1fr_80px] items-center gap-2">
+            <span class="text-sm text-gray-700">{{ item.name }}</span>
+            <div class="h-2.5 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-[#2f3137] transition-all" :style="{width:Math.round(item.ratio*100)+'%'}"></div></div>
+            <span class="text-right text-xs text-gray-500">{{ (item.ratio*100).toFixed(1) }}%（{{ item.count }}）</span>
           </div>
         </div>
-      </section>
+      </div>
     </div>
   </div>
-  
 </template>
-
-<style scoped>
-.zodiac-filter-comp { display: flex; flex-direction: column; height: 100%; }
-.content { padding: 12px; padding-bottom: 80px; }
-.selected-card { background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-3); box-shadow: var(--shadow-soft); }
-.selected-head { display: flex; align-items: center; justify-content: space-between; }
-.selected-title { font-size: 14px; color: var(--color-text); }
-.number-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-.tag { display: inline-flex; align-items: center; justify-content: center; min-width: 48px; height: 36px; padding: 0 8px; border-radius: 999px; font-weight: 600; font-size: 14px; }
-.tag--selected { background: var(--color-primary); color: #fff; }
-.actions { display: flex; gap: 8px; margin-top: 10px; }
-.grid-section { margin-top: 12px; background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-3); }
-.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
-.chip { padding: 10px 14px; border-radius: var(--radius-full); border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); font-size: 14px; transition: transform .12s ease, box-shadow .12s ease, background-color .12s ease, border-color .12s ease; }
-.chip:hover { box-shadow: var(--shadow-soft); transform: translateY(-1px); }
-.chip:active { transform: translateY(-2px); }
-.chip--active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
-@media (max-width: 480px) { .grid { grid-template-columns: repeat(3, 1fr); } }
-
-.groups-section { margin-top: 24px; background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-3); box-shadow: var(--shadow-soft); }
-.groups-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-.section-title { color: var(--color-text); }
-.groups { display: flex; flex-direction: column; gap: 12px; }
-.group { display: flex; flex-direction: column; gap: 6px; }
-.group-title { font-size: 13px; color: var(--color-text-muted); }
-.group-tags { display: flex; flex-wrap: wrap; gap: 8px; }
-.empty { font-size: 13px; color: var(--color-text-muted); }
-
-.group-head { display: flex; align-items: center; justify-content: space-between; }
-.group-delete-btn { min-width: auto; width: 28px; height: 28px; padding: 0; border-radius: 999px; }
-
-.stats-section { margin-top: 12px; background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-3); }
-.stats { display: flex; flex-direction: column; gap: 10px; }
-.stat-row { display: grid; grid-template-columns: 60px 1fr 80px; align-items: center; gap: 8px; }
-.stat-label { font-size: 14px; color: var(--color-text); }
-.stat-bar { height: 10px; background: #f3f4f6; border-radius: var(--radius-full); overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,.06); }
-.stat-fill { height: 100%; background: var(--color-primary); transition: width .25s ease; }
-.stat-meta { text-align: right; font-size: 12px; color: var(--color-text-muted); }
-</style>

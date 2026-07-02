@@ -5,24 +5,14 @@ import { lotteryDataService } from '@/services/lotteryData'
 import { computeRanking } from '@/utils/zodiac'
 import { confirmDialog, toast } from '@/utils/feedback'
 
-type ConditionGroup = {
-  conditions: string[]
-  zodiacs: string[]
-}
-
-type ConditionOptionGroup = {
-  key: string
-  title: string
-  items: string[]
-}
+type ConditionGroup = { conditions: string[]; zodiacs: string[] }
+type ConditionOptionGroup = { key: string; title: string; items: string[] }
 
 const conditionOptions = lotteryDataService.getOtherAttributeOptions()
-const zodiacOptions = lotteryDataService.getZodiacOptions().map((item) => item.label)
-
+const zodiacOptions = lotteryDataService.getZodiacOptions().map(i => i.label)
 const selectedConditions = ref<string[]>([])
 const selectedZodiacs = ref<string[]>([])
 const groups = ref<ConditionGroup[]>([])
-
 const selected = computed(() => [...selectedConditions.value, ...selectedZodiacs.value])
 
 const conditionGroupRules = [
@@ -32,324 +22,148 @@ const conditionGroupRules = [
   { key: 'color', title: '颜色边中', patterns: [/红肖|蓝肖|绿肖|白肖|白边|黑中/] },
   { key: 'size', title: '大小胆', patterns: [/大肖|小肖|胆大肖|胆小肖|单双|双笔|单笔/] },
   { key: 'season', title: '四季才艺', patterns: [/春|夏|秋|冬|琴|棋|书|画/] },
-] as const
+]
 
 const groupedConditionOptions = computed<ConditionOptionGroup[]>(() => {
   const remaining = [...conditionOptions]
-  const groups: ConditionOptionGroup[] = []
-
-  conditionGroupRules.forEach((rule) => {
-    const matched = remaining.filter((item) => rule.patterns.some((pattern) => pattern.test(item)))
-    if (matched.length > 0) {
-      groups.push({ key: rule.key, title: rule.title, items: matched })
-      matched.forEach((item) => {
-        const idx = remaining.indexOf(item)
-        if (idx > -1) remaining.splice(idx, 1)
-      })
-    }
+  const result: ConditionOptionGroup[] = []
+  conditionGroupRules.forEach(rule => {
+    const matched = remaining.filter(i => rule.patterns.some(p => p.test(i)))
+    if (matched.length) { result.push({ key: rule.key, title: rule.title, items: matched }); matched.forEach(i => { const idx = remaining.indexOf(i); if (idx > -1) remaining.splice(idx, 1) }) }
   })
-
-  if (remaining.length > 0) {
-    groups.push({ key: 'other', title: '其他', items: remaining })
-  }
-
-  return groups
+  if (remaining.length) result.push({ key: 'other', title: '其他', items: remaining })
+  return result
 })
 
-const activeConditionGroups = ref<string[]>(conditionGroupRules.slice(0, 2).map((item) => item.key))
+const activeConditionGroups = ref<string[]>(conditionGroupRules.slice(0, 2).map(i => i.key))
 
 const ranking = computed(() => {
-  const zodiacGroups = groups.value.map((group) => {
-    const zodiacs = group.conditions.flatMap((condition) => lotteryDataService.getOtherAttributeZodiacs(condition))
-    zodiacs.push(...group.zodiacs)
-    return zodiacs
+  const zodiacGroups = groups.value.map(g => {
+    const zodiacs = g.conditions.flatMap(c => lotteryDataService.getOtherAttributeZodiacs(c))
+    zodiacs.push(...g.zodiacs); return zodiacs
   })
-
   return computeRanking(zodiacGroups)
 })
 
-function toggle(condition: string) {
-  const index = selectedConditions.value.indexOf(condition)
-  if (index > -1) selectedConditions.value.splice(index, 1)
-  else selectedConditions.value.push(condition)
-}
-
-function toggleZodiac(zodiac: string) {
-  const index = selectedZodiacs.value.indexOf(zodiac)
-  if (index > -1) selectedZodiacs.value.splice(index, 1)
-  else selectedZodiacs.value.push(zodiac)
-}
-
-function clearCurrent() {
-  selectedConditions.value = []
-  selectedZodiacs.value = []
-}
+function toggle(condition: string) { const i = selectedConditions.value.indexOf(condition); i > -1 ? selectedConditions.value.splice(i, 1) : selectedConditions.value.push(condition) }
+function toggleZodiac(zodiac: string) { const i = selectedZodiacs.value.indexOf(zodiac); i > -1 ? selectedZodiacs.value.splice(i, 1) : selectedZodiacs.value.push(zodiac) }
+function clearCurrent() { selectedConditions.value = []; selectedZodiacs.value = [] }
 
 async function copySelected() {
-  if (selected.value.length === 0) {
-    toast('暂无选择')
-    return
-  }
-
-  try {
-    await navigator.clipboard.writeText(selected.value.join('、'))
-    toast('复制成功')
-  } catch {
-    toast('复制失败')
-  }
+  if (selected.value.length === 0) { toast('暂无选择'); return }
+  try { await navigator.clipboard.writeText(selected.value.join('、')); toast('复制成功') } catch { toast('复制失败') }
 }
 
 function confirmGroup() {
-  if (selectedConditions.value.length === 0 && selectedZodiacs.value.length === 0) {
-    toast('请先选择条件')
-    return
-  }
-
-  groups.value = [
-    ...groups.value,
-    {
-      conditions: [...selectedConditions.value],
-      zodiacs: [...selectedZodiacs.value],
-    },
-  ]
-  selectedConditions.value = []
-  selectedZodiacs.value = []
-  toast('已添加一组')
+  if (selectedConditions.value.length === 0 && selectedZodiacs.value.length === 0) { toast('请先选择条件'); return }
+  groups.value = [...groups.value, { conditions: [...selectedConditions.value], zodiacs: [...selectedZodiacs.value] }]
+  selectedConditions.value = []; selectedZodiacs.value = []; toast('已添加一组')
 }
 
 async function clearAllGroups() {
-  try {
-    await confirmDialog({
-      title: '确认操作',
-      message: '确定要清空所有条件组吗？此操作不可撤销',
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      showCancelButton: true,
-    })
-    groups.value = []
-    selectedConditions.value = []
-    selectedZodiacs.value = []
-    toast('所有组已成功清空')
-  } catch {}
+  const confirmed = await confirmDialog({ title: '确认操作', message: '确定要清空所有条件组吗？此操作不可撤销', confirmText: '确定', cancelText: '取消', showCancel: true })
+  if (confirmed) { groups.value = []; selectedConditions.value = []; selectedZodiacs.value = []; toast('所有组已成功清空') }
 }
 
-function deleteGroup(index: number) {
-  groups.value.splice(index, 1)
-  toast('已删除该组')
-}
+function deleteGroup(index: number) { groups.value.splice(index, 1); toast('已删除该组') }
 
 function getGroupZodiacStats(group: ConditionGroup) {
-  const fromConditions = group.conditions.flatMap((condition) => lotteryDataService.getOtherAttributeZodiacs(condition))
+  const fromConditions = group.conditions.flatMap(c => lotteryDataService.getOtherAttributeZodiacs(c))
   const all = [...fromConditions, ...group.zodiacs]
   const counter = new Map<string, number>()
-
-  all.forEach((zodiac) => {
-    counter.set(zodiac, (counter.get(zodiac) || 0) + 1)
-  })
-
-  return Array.from(counter.entries())
-    .map(([name, count]) => ({ name, count }))
-    .sort((a, b) => b.count - a.count)
+  all.forEach(z => counter.set(z, (counter.get(z) || 0) + 1))
+  return Array.from(counter.entries()).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count)
 }
 
-defineExpose({
-  refresh: () => {
-    selectedConditions.value = []
-    selectedZodiacs.value = []
-    toast('已刷新条件筛选')
-  },
-})
+function togglePanel(key: string) {
+  const i = activeConditionGroups.value.indexOf(key)
+  i > -1 ? activeConditionGroups.value.splice(i, 1) : activeConditionGroups.value.push(key)
+}
+
+defineExpose({ refresh: () => { selectedConditions.value = []; selectedZodiacs.value = []; toast('已刷新条件筛选') } })
 </script>
 
 <template>
-  <div class="condition-filter-comp">
-    <div class="content">
-      <section class="selected-card">
-        <div class="selected-head">
-          <span class="selected-title">已选条件</span>
+  <div class="flex flex-col h-full pb-20">
+    <div class="p-3 space-y-3">
+      <!-- Selected -->
+      <div class="bg-white rounded-2xl p-3 shadow-sm border border-gray-200">
+        <span class="text-sm text-gray-700">已选条件</span>
+        <div class="flex flex-wrap gap-2 mt-2">
+          <span v-for="item in selected" :key="item" class="inline-flex items-center justify-center min-w-[48px] min-h-9 px-2.5 rounded-full bg-[#2f3137] text-white font-semibold text-sm">{{ item }}</span>
+          <span v-if="selected.length===0" class="text-sm text-gray-400">暂无选择</span>
         </div>
-        <div class="condition-tags">
-          <span v-for="item in selected" :key="item" class="tag tag--selected">{{ item }}</span>
-          <span v-if="selected.length === 0" class="tag tag--empty">暂无选择</span>
+        <div class="flex gap-2 mt-3">
+          <button class="btn btn-sm btn-outline btn-secondary" @click="copySelected">复制</button>
+          <button class="btn btn-sm btn-ghost" @click="clearCurrent">清空</button>
+          <button class="btn btn-sm btn-primary" @click="confirmGroup">确认本组</button>
         </div>
-        <div class="actions">
-          <van-button size="small" plain type="primary" @click="copySelected">复制</van-button>
-          <van-button size="small" plain @click="clearCurrent">清空</van-button>
-          <van-button size="small" type="primary" @click="confirmGroup">确认本组</van-button>
-        </div>
-      </section>
+      </div>
 
-      <section class="grid-section">
-        <div class="section-title">条件选项分组</div>
-        <van-collapse v-model="activeConditionGroups" :border="false" class="condition-collapse">
-          <van-collapse-item
-            v-for="group in groupedConditionOptions"
-            :key="group.key"
-            :title="group.title"
-            :name="group.key"
-            class="condition-collapse-item"
-          >
-            <template #value>
-              <span class="collapse-meta">{{ group.items.length }}项</span>
-            </template>
-            <div class="grid">
-              <button
-                v-for="condition in group.items"
-                :key="condition"
-                type="button"
-                class="chip"
-                :class="selectedConditions.includes(condition) ? 'chip--active' : ''"
-                @click="toggle(condition)"
-              >
-                {{ condition }}
-              </button>
+      <!-- Condition Groups (custom accordion) -->
+      <div class="bg-white rounded-2xl p-3 border border-gray-200">
+        <h3 class="text-sm font-semibold text-gray-800 mb-3">条件选项分组</h3>
+        <div v-for="grp in groupedConditionOptions" :key="grp.key" class="mb-2 border border-gray-200 rounded-xl overflow-hidden">
+          <button type="button" class="w-full flex items-center justify-between px-4 py-3 bg-white font-semibold text-sm" @click="togglePanel(grp.key)">
+            <span>{{ grp.title }}</span>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-400">{{ grp.items.length }}项</span>
+              <span class="icon-[tabler--chevron-down] size-4 transition-transform" :class="activeConditionGroups.includes(grp.key)?'rotate-180':''"></span>
             </div>
-          </van-collapse-item>
-        </van-collapse>
-      </section>
-
-      <section class="grid-section">
-        <div class="section-title">额外生肖筛选（{{ selectedZodiacs.length }}）</div>
-        <div class="grid zodiac-grid">
-          <button
-            v-for="zodiac in zodiacOptions"
-            :key="zodiac"
-            type="button"
-            class="chip"
-            :class="selectedZodiacs.includes(zodiac) ? 'chip--active' : ''"
-            @click="toggleZodiac(zodiac)"
-          >
-            {{ zodiac }}
           </button>
-        </div>
-      </section>
-
-      <section class="groups-section">
-        <div class="groups-head">
-          <h3 class="section-title">已添加的条件组</h3>
-          <van-button size="small" type="danger" plain @click="clearAllGroups">
-            <van-icon name="delete" />
-            <span class="ml-4">清空所有组</span>
-          </van-button>
-        </div>
-        <div v-if="groups.length === 0" class="empty">暂无分组</div>
-        <div v-else class="groups">
-          <div v-for="(group, index) in groups" :key="index" class="group">
-            <div class="group-head">
-              <span class="group-title">第{{ index + 1 }}组</span>
-              <van-button
-                icon="delete"
-                size="mini"
-                type="danger"
-                plain
-                class="group-delete-btn"
-                @click="deleteGroup(index)"
-              />
-            </div>
-            <div class="group-tags">
-              <div class="group-tags-block">
-                <span class="group-tags-label">条件组</span>
-                <div class="group-tags-items">
-                  <span v-for="item in group.conditions" :key="item" class="tag tag--selected">{{ item }}</span>
-                  <span v-if="group.conditions.length === 0" class="tag tag--empty">无</span>
-                </div>
-              </div>
-              <div class="group-tags-block">
-                <span class="group-tags-label">额外生肖</span>
-                <div class="group-tags-items">
-                  <span v-for="zodiac in group.zodiacs" :key="`z-${zodiac}`" class="tag tag--extra">{{ zodiac }}</span>
-                  <span v-if="group.zodiacs.length === 0" class="tag tag--empty">无</span>
-                </div>
-              </div>
-            </div>
-            <div class="group-zodiacs">
-              <span class="group-zodiacs__label">对应生肖（含重复）</span>
-              <div class="group-zodiacs__tags">
-                <span
-                  v-for="zodiac in getGroupZodiacStats(group)"
-                  :key="zodiac.name"
-                  class="tag tag--derived"
-                  :class="zodiac.count > 1 ? 'tag--repeat' : ''"
-                >
-                  {{ zodiac.name }}<template v-if="zodiac.count > 1">×{{ zodiac.count }}</template>
-                </span>
-              </div>
+          <div v-if="activeConditionGroups.includes(grp.key)" class="px-4 pb-3 pt-1 bg-white">
+            <div class="grid grid-cols-3 gap-2">
+              <button v-for="condition in grp.items" :key="condition" type="button"
+                class="u-chip" :class="selectedConditions.includes(condition)?'is-active':''" @click="toggle(condition)">{{ condition }}</button>
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      <section class="stats-section">
-        <h3 class="section-title">重复生肖统计</h3>
-        <div v-if="ranking.length === 0" class="empty">暂无数据</div>
-        <div v-else class="stats">
-          <div v-for="item in ranking" :key="item.name" class="stat-row">
-            <div class="stat-label">{{ item.name }}</div>
-            <div class="stat-bar">
-              <div class="stat-fill" :style="{ width: Math.round(item.ratio * 100) + '%' }"></div>
+      <!-- Zodiac extra -->
+      <div class="bg-white rounded-2xl p-3 border border-gray-200">
+        <h3 class="text-sm font-semibold text-gray-800 mb-3">额外生肖筛选（{{ selectedZodiacs.length }}）</h3>
+        <div class="grid grid-cols-3 gap-2">
+          <button v-for="zodiac in zodiacOptions" :key="zodiac" type="button"
+            class="u-chip" :class="selectedZodiacs.includes(zodiac)?'is-active':''" @click="toggleZodiac(zodiac)">{{ zodiac }}</button>
+        </div>
+      </div>
+
+      <!-- Groups -->
+      <div class="bg-white rounded-2xl p-3 shadow-sm border border-gray-200">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-semibold text-gray-800">已添加的条件组</h3>
+          <button class="btn btn-xs btn-soft btn-error" @click="clearAllGroups">清空所有组</button>
+        </div>
+        <div v-if="groups.length===0" class="text-sm text-gray-400">暂无分组</div>
+        <div v-else class="space-y-3">
+          <div v-for="(group, idx) in groups" :key="idx" class="space-y-2">
+            <div class="flex items-center justify-between"><span class="text-sm text-gray-500">第{{ idx+1 }}组</span>
+              <button class="btn btn-xs btn-circle btn-ghost text-error" @click="deleteGroup(idx)"><span class="icon-[tabler--trash] size-3.5"></span></button>
             </div>
-            <div class="stat-meta">{{ (item.ratio * 100).toFixed(1) }}%（{{ item.count }}）</div>
+            <div class="space-y-1.5">
+              <div><span class="text-xs text-gray-400">条件组</span><div class="flex flex-wrap gap-2 mt-1"><span v-for="item in group.conditions" :key="item" class="inline-flex items-center justify-center min-w-[48px] min-h-9 px-2.5 rounded-full bg-[#2f3137] text-white font-semibold text-sm">{{ item }}</span><span v-if="!group.conditions.length" class="text-xs text-gray-400">无</span></div></div>
+              <div><span class="text-xs text-gray-400">额外生肖</span><div class="flex flex-wrap gap-2 mt-1"><span v-for="z in group.zodiacs" :key="z" class="inline-flex items-center justify-center min-w-[48px] min-h-9 px-2.5 rounded-full bg-[#f8fafc] border border-gray-200 text-sm">{{ z }}</span><span v-if="!group.zodiacs.length" class="text-xs text-gray-400">无</span></div></div>
+            </div>
+            <div><span class="text-xs text-gray-400">对应生肖（含重复）</span><div class="flex flex-wrap gap-2 mt-1">
+              <span v-for="z in getGroupZodiacStats(group)" :key="z.name" class="inline-flex items-center justify-center min-w-[48px] min-h-9 px-2 rounded-full text-sm font-semibold" :class="z.count>1?'bg-red-100 text-red-700':'bg-gray-100 text-[#2f3137]'">{{ z.name }}<template v-if="z.count>1">×{{ z.count }}</template></span>
+            </div></div>
           </div>
         </div>
-      </section>
+      </div>
+
+      <!-- Stats -->
+      <div class="bg-white rounded-2xl p-3 border border-gray-200">
+        <h3 class="text-sm font-semibold text-gray-800 mb-3">重复生肖统计</h3>
+        <div v-if="ranking.length===0" class="text-sm text-gray-400">暂无数据</div>
+        <div v-else class="space-y-2">
+          <div v-for="item in ranking" :key="item.name" class="grid grid-cols-[60px_1fr_80px] items-center gap-2">
+            <span class="text-sm text-gray-700">{{ item.name }}</span>
+            <div class="h-2.5 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-[#2f3137] transition-all" :style="{width:Math.round(item.ratio*100)+'%'}"></div></div>
+            <span class="text-right text-xs text-gray-500">{{ (item.ratio*100).toFixed(1) }}%（{{ item.count }}）</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
-
-<style scoped>
-.condition-filter-comp { display: flex; flex-direction: column; height: 100%; }
-.content { padding: 12px; padding-bottom: 80px; }
-.selected-card {
-  background: var(--color-surface);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border);
-  padding: var(--space-3);
-  box-shadow: var(--shadow-soft);
-}
-.selected-head { display: flex; align-items: center; justify-content: space-between; }
-.selected-title { font-size: 14px; color: var(--color-text); }
-.condition-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-.tag { display: inline-flex; align-items: center; justify-content: center; min-width: 48px; min-height: 36px; padding: 0 10px; border-radius: 999px; font-weight: 600; font-size: 14px; }
-.tag--selected { background: var(--color-primary); color: #fff; }
-.tag--extra { background: #f8fafc; color: var(--color-text); border: 1px solid var(--color-border); }
-.tag--derived { background: rgba(47, 49, 55, 0.12); color: var(--color-primary); }
-.tag--repeat { background: #fee2e2; color: #b91c1c; }
-.tag--empty { background: #f3f4f6; color: var(--color-text-muted); border: 1px dashed var(--color-border); }
-.actions { display: flex; gap: 8px; margin-top: 10px; }
-.grid-section { margin-top: 12px; background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-3); }
-.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
-.condition-collapse { margin-top: 8px; }
-.collapse-meta { font-size: 12px; color: var(--color-text-muted); }
-.condition-collapse-item { border: 1px solid var(--color-border); border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 8px; }
-:deep(.condition-collapse-item .van-collapse-item__title) { background: #fff; font-weight: 600; }
-:deep(.condition-collapse-item .van-collapse-item__content) { background: #fff; padding: 10px 0 4px; }
-.zodiac-grid { margin-top: 10px; }
-.chip { padding: 10px 12px; border-radius: var(--radius-full); border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); font-size: 14px; transition: transform .12s ease, box-shadow .12s ease, background-color .12s ease, border-color .12s ease; }
-.chip:hover { box-shadow: var(--shadow-soft); transform: translateY(-1px); }
-.chip:active { transform: translateY(-2px); }
-.chip--active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
-.groups-section { margin-top: 24px; background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-3); box-shadow: var(--shadow-soft); }
-.groups-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-.section-title { color: var(--color-text); }
-.groups { display: flex; flex-direction: column; gap: 12px; }
-.group { display: flex; flex-direction: column; gap: 8px; }
-.group-head { display: flex; align-items: center; justify-content: space-between; }
-.group-title { font-size: 13px; color: var(--color-text-muted); }
-.group-tags { display: flex; flex-direction: column; gap: 8px; }
-.group-tags-block { display: flex; flex-direction: column; gap: 6px; }
-.group-tags-label { font-size: 12px; color: var(--color-text-muted); }
-.group-tags-items { display: flex; flex-wrap: wrap; gap: 8px; }
-.group-zodiacs { display: flex; flex-direction: column; gap: 8px; }
-.group-zodiacs__label { font-size: 12px; color: var(--color-text-muted); }
-.group-zodiacs__tags { display: flex; flex-wrap: wrap; gap: 8px; }
-.empty { font-size: 13px; color: var(--color-text-muted); }
-.group-delete-btn { min-width: auto; width: 28px; height: 28px; padding: 0; border-radius: 999px; }
-.stats-section { margin-top: 12px; background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-3); }
-.stats { display: flex; flex-direction: column; gap: 10px; }
-.stat-row { display: grid; grid-template-columns: 60px 1fr 80px; align-items: center; gap: 8px; }
-.stat-label { font-size: 14px; color: var(--color-text); }
-.stat-bar { height: 10px; background: #f3f4f6; border-radius: var(--radius-full); overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,.06); }
-.stat-fill { height: 100%; background: var(--color-primary); transition: width .25s ease; }
-.stat-meta { text-align: right; font-size: 12px; color: var(--color-text-muted); }
-@media (max-width: 480px) { .grid { grid-template-columns: repeat(3, 1fr); } }
-</style>

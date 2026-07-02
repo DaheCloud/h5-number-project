@@ -4,73 +4,41 @@ import { ref, computed } from 'vue'
 import { confirmDialog, toast } from '@/utils/feedback'
 
 const activeTab = ref<'head' | 'tail'>('head')
-
 const heads = [0, 1, 2, 3, 4]
 const units = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-
 const selectedHeads = ref<number[]>([])
 const selectedUnits = ref<number[]>([])
+const groupsHead = ref<number[][]>([])
+const groupsUnit = ref<number[][]>([])
 
-function toggleHead(n: number) {
-  const i = selectedHeads.value.indexOf(n)
-  if (i > -1) selectedHeads.value.splice(i, 1)
-  else selectedHeads.value.push(n)
-}
-
-function toggleUnit(n: number) {
-  const i = selectedUnits.value.indexOf(n)
-  if (i > -1) selectedUnits.value.splice(i, 1)
-  else selectedUnits.value.push(n)
-}
-
-function clearCurrent() {
-  if (activeTab.value === 'head') selectedHeads.value = []
-  else selectedUnits.value = []
-}
+function toggleHead(n: number) { const i = selectedHeads.value.indexOf(n); i > -1 ? selectedHeads.value.splice(i, 1) : selectedHeads.value.push(n) }
+function toggleUnit(n: number) { const i = selectedUnits.value.indexOf(n); i > -1 ? selectedUnits.value.splice(i, 1) : selectedUnits.value.push(n) }
+function clearCurrent() { activeTab.value === 'head' ? selectedHeads.value = [] : selectedUnits.value = [] }
 
 async function copySelected() {
   const list = activeTab.value === 'head' ? selectedHeads.value : selectedUnits.value
   if (list.length === 0) { toast('暂无选择'); return }
-  const text = list.join('.')
-  try { await navigator.clipboard.writeText(text); toast('复制成功') } catch { toast('复制失败') }
+  try { await navigator.clipboard.writeText(list.join('.')); toast('复制成功') } catch { toast('复制失败') }
 }
-
-const groupsHead = ref<number[][]>([])
-const groupsUnit = ref<number[][]>([])
 
 function confirmGroup() {
   if (activeTab.value === 'head') {
     if (selectedHeads.value.length === 0) { toast('请先选择头数'); return }
-    groupsHead.value.push([...selectedHeads.value])
-    selectedHeads.value = []
-    toast('已添加一组')
+    groupsHead.value.push([...selectedHeads.value]); selectedHeads.value = []; toast('已添加一组')
   } else {
     if (selectedUnits.value.length === 0) { toast('请先选择尾数'); return }
-    groupsUnit.value.push([...selectedUnits.value])
-    selectedUnits.value = []
-    toast('已添加一组')
+    groupsUnit.value.push([...selectedUnits.value]); selectedUnits.value = []; toast('已添加一组')
   }
 }
 
 function deleteGroup(index: number) {
-  if (activeTab.value === 'head') groupsHead.value.splice(index, 1)
-  else groupsUnit.value.splice(index, 1)
+  activeTab.value === 'head' ? groupsHead.value.splice(index, 1) : groupsUnit.value.splice(index, 1)
   toast('已删除该组')
 }
 
 async function clearAllGroups() {
-  try {
-    await confirmDialog({
-      title: '确认操作',
-      message: '确定要清空所有组吗？此操作不可撤销',
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      showCancelButton: true,
-    })
-    if (activeTab.value === 'head') groupsHead.value = []
-    else groupsUnit.value = []
-    toast('所有组已成功清空')
-  } catch {}
+  const confirmed = await confirmDialog({ title: '确认操作', message: '确定要清空所有组吗？此操作不可撤销', confirmText: '确定', cancelText: '取消', showCancel: true })
+  if (confirmed) { activeTab.value === 'head' ? groupsHead.value = [] : groupsUnit.value = []; toast('所有组已成功清空') }
 }
 
 const totalCount = computed(() => {
@@ -83,145 +51,78 @@ const ranking = computed(() => {
   if (totalCount.value === 0) return [] as { name: string; count: number; ratio: number }[]
   const m = new Map<number, number>()
   for (const g of list) for (const n of g) m.set(n, (m.get(n) || 0) + 1)
-  return Array.from(m.entries())
-    .map(([name, count]) => ({ name: String(name), count, ratio: count / totalCount.value }))
-    .sort((a, b) => b.ratio - a.ratio)
+  return Array.from(m.entries()).map(([name, count]) => ({ name: String(name), count, ratio: count / totalCount.value })).sort((a, b) => b.ratio - a.ratio)
 })
 
-// Unified refresh logic if needed
-defineExpose({
-    refresh: () => {
-        // Just clear selection for "refresh" or reload data if there was async data
-        selectedHeads.value = []
-        selectedUnits.value = []
-        toast('已刷新头尾筛选')
-    }
-})
+defineExpose({ refresh: () => { selectedHeads.value = []; selectedUnits.value = []; toast('已刷新头尾筛选') } })
 </script>
 
 <template>
-  <div class="head-tail-filter-comp">
-    <div class="content">
-      <section class="selected-card">
-        <div class="selected-head">
-          <span class="selected-title">已选{{ activeTab === 'head' ? '头数' : '尾数' }}</span>
+  <div class="flex flex-col h-full pb-20">
+    <div class="p-3 space-y-3">
+      <!-- Selected Card -->
+      <div class="bg-white rounded-2xl p-3 shadow-sm border border-gray-200">
+        <span class="text-sm text-gray-700">已选{{ activeTab === 'head' ? '头数' : '尾数' }}</span>
+        <div class="flex flex-wrap gap-2 mt-2">
+          <span v-for="n in (activeTab==='head'?selectedHeads:selectedUnits)" :key="n" class="inline-flex items-center justify-center min-w-[48px] h-9 px-2 rounded-full bg-[#2f3137] text-white font-semibold text-sm">{{ n }}</span>
+          <span v-if="(activeTab==='head'?selectedHeads:selectedUnits).length===0" class="text-sm text-gray-400">暂无选择</span>
         </div>
-        <div class="number-tags">
-          <span v-for="n in (activeTab==='head'?selectedHeads:selectedUnits)" :key="n" class="tag tag--selected">{{ n }}</span>
-          <span v-if="(activeTab==='head'?selectedHeads:selectedUnits).length === 0" class="tag tag--empty">暂无选择</span>
+        <div class="flex gap-2 mt-3">
+          <button class="btn btn-sm btn-outline btn-secondary" @click="copySelected">复制</button>
+          <button class="btn btn-sm btn-ghost" @click="clearCurrent">清空</button>
+          <button class="btn btn-sm btn-primary" @click="confirmGroup">确认本组</button>
         </div>
-        <div class="actions">
-          <van-button size="small" plain type="primary" @click="copySelected">复制</van-button>
-          <van-button size="small" plain @click="clearCurrent">清空</van-button>
-          <van-button size="small" type="primary" @click="confirmGroup">确认本组</van-button>
-        </div>
-      </section>
+      </div>
 
-      <section class="tabs-section">
-        <van-tabs v-model:active="activeTab" type="card">
-          <van-tab title="头数" name="head" />
-          <van-tab title="尾数" name="tail" />
-        </van-tabs>
-      </section>
-
-      <section class="grid-section">
-        <div class="grid">
-          <button
-            v-for="n in (activeTab==='head'?heads:units)"
-            :key="n"
-            type="button"
-            class="chip"
-            :class="(activeTab==='head'?selectedHeads:selectedUnits).includes(n) ? 'chip--active' : ''"
-            @click="activeTab==='head'?toggleHead(n):toggleUnit(n)"
-          >
-            {{ n }}
-          </button>
+      <!-- Tab Switcher -->
+      <div class="bg-white rounded-2xl p-3 border border-gray-200">
+        <div class="tabs tabs-boxed">
+          <button class="tab" :class="activeTab==='head'?'tab-active':''" @click="activeTab='head'">头数</button>
+          <button class="tab" :class="activeTab==='tail'?'tab-active':''" @click="activeTab='tail'">尾数</button>
         </div>
-      </section>
+      </div>
 
-      <section class="groups-section">
-        <div class="groups-head">
-          <van-button size="small" type="danger" plain @click="clearAllGroups">
-            <van-icon name="delete" />
-            <span class="ml-4">清空所有组</span>
-          </van-button>
-          <h3 class="section-title">已添加的组（{{ activeTab==='head' ? '头数' : '尾数' }}）</h3>
+      <!-- Grid -->
+      <div class="bg-white rounded-2xl p-3 border border-gray-200">
+        <div class="grid grid-cols-5 gap-2">
+          <button v-for="n in (activeTab==='head'?heads:units)" :key="n" type="button"
+            class="u-chip"
+            :class="(activeTab==='head'?selectedHeads:selectedUnits).includes(n)?'is-active':''"
+            @click="activeTab==='head'?toggleHead(n):toggleUnit(n)">{{ n }}</button>
         </div>
-        <div v-if="(activeTab==='head'?groupsHead:groupsUnit).length === 0" class="empty">暂无分组</div>
-        <div v-else class="groups">
-          <div v-for="(g, i) in (activeTab==='head'?groupsHead:groupsUnit)" :key="i" class="group">
-            <div class="group-head">
-              <span class="group-title">第{{ i + 1 }}组</span>
-              <van-button
-                icon="delete"
-                size="mini"
-                type="danger"
-                plain
-                class="group-delete-btn"
-                @click="deleteGroup(i)"
-              />
+      </div>
+
+      <!-- Groups -->
+      <div class="bg-white rounded-2xl p-3 shadow-sm border border-gray-200">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-semibold text-gray-800">已添加的组（{{ activeTab==='head'?'头数':'尾数' }}）</h3>
+          <button class="btn btn-xs btn-soft btn-error" @click="clearAllGroups">清空所有组</button>
+        </div>
+        <div v-if="(activeTab==='head'?groupsHead:groupsUnit).length===0" class="text-sm text-gray-400">暂无分组</div>
+        <div v-else class="space-y-3">
+          <div v-for="(g,i) in (activeTab==='head'?groupsHead:groupsUnit)" :key="i">
+            <div class="flex items-center justify-between"><span class="text-sm text-gray-500">第{{ i+1 }}组</span>
+              <button class="btn btn-xs btn-circle btn-ghost text-error" @click="deleteGroup(i)"><span class="icon-[tabler--trash] size-3.5"></span></button>
             </div>
-            <div class="group-tags">
-              <span v-for="n in g" :key="n" class="tag tag--selected">{{ n }}</span>
+            <div class="flex flex-wrap gap-2 mt-1">
+              <span v-for="n in g" :key="n" class="inline-flex items-center justify-center min-w-[48px] h-9 px-2 rounded-full bg-[#2f3137] text-white font-semibold text-sm">{{ n }}</span>
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      <section class="stats-section">
-        <h3 class="section-title">统计结果</h3>
-        <div v-if="ranking.length === 0" class="empty">暂无数据</div>
-        <div v-else class="stats">
-          <div v-for="item in ranking" :key="item.name" class="stat-row">
-            <div class="stat-label">{{ item.name }}</div>
-            <div class="stat-bar">
-              <div class="stat-fill" :style="{ width: Math.round(item.ratio * 100) + '%' }"></div>
-            </div>
-            <div class="stat-meta">{{ (item.ratio * 100).toFixed(1) }}%（{{ item.count }}）</div>
+      <!-- Stats -->
+      <div class="bg-white rounded-2xl p-3 border border-gray-200">
+        <h3 class="text-sm font-semibold text-gray-800 mb-3">统计结果</h3>
+        <div v-if="ranking.length===0" class="text-sm text-gray-400">暂无数据</div>
+        <div v-else class="space-y-2">
+          <div v-for="item in ranking" :key="item.name" class="grid grid-cols-[60px_1fr_80px] items-center gap-2">
+            <span class="text-sm text-gray-700">{{ item.name }}</span>
+            <div class="h-2.5 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-[#2f3137] transition-all" :style="{width:Math.round(item.ratio*100)+'%'}"></div></div>
+            <span class="text-right text-xs text-gray-500">{{ (item.ratio*100).toFixed(1) }}%（{{ item.count }}）</span>
           </div>
         </div>
-      </section>
+      </div>
     </div>
   </div>
 </template>
-
-<style scoped>
-.head-tail-filter-comp { display: flex; flex-direction: column; height: 100%; }
-.content { padding: 12px; padding-bottom: 80px; }
-.selected-card { background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-3); box-shadow: var(--shadow-soft); }
-.selected-head { display: flex; align-items: center; justify-content: space-between; }
-.selected-title { font-size: 14px; color: var(--color-text); }
-.number-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-.tag { display: inline-flex; align-items: center; justify-content: center; min-width: 48px; height: 36px; padding: 0 8px; border-radius: 999px; font-weight: 600; font-size: 14px; }
-.tag--selected { background: var(--color-primary); color: #fff; }
-.actions { display: flex; gap: 8px; margin-top: 10px; }
-.tabs-section { margin-top: 12px; background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-3); }
-.grid-section { margin-top: 12px; background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-3); }
-.grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--space-2); }
-.chip { padding: 10px 14px; border-radius: var(--radius-full); border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); font-size: 14px; transition: transform .12s ease, box-shadow .12s ease, background-color .12s ease, border-color .12s ease; }
-.chip:hover { box-shadow: var(--shadow-soft); transform: translateY(-1px); }
-.chip:active { transform: translateY(-2px); }
-.chip--active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
-
-.groups-section { margin-top: 24px; background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-3); box-shadow: var(--shadow-soft); }
-.groups-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-.section-title { color: var(--color-text); }
-.groups { display: flex; flex-direction: column; gap: 12px; }
-.group { display: flex; flex-direction: column; gap: 6px; }
-.group-title { font-size: 13px; color: var(--color-text-muted); }
-.group-tags { display: flex; flex-wrap: wrap; gap: 8px; }
-.empty { font-size: 13px; color: var(--color-text-muted); }
-
-.group-head { display: flex; align-items: center; justify-content: space-between; }
-.group-delete-btn { min-width: auto; width: 28px; height: 28px; padding: 0; border-radius: 999px; }
-
-.stats-section { margin-top: 12px; background: var(--color-surface); border-radius: var(--radius-md); padding: var(--space-3); }
-.stats { display: flex; flex-direction: column; gap: 10px; }
-.stat-row { display: grid; grid-template-columns: 60px 1fr 80px; align-items: center; gap: 8px; }
-.stat-label { font-size: 14px; color: var(--color-text); }
-.stat-bar { height: 10px; background: #f3f4f6; border-radius: var(--radius-full); overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,.06); }
-.stat-fill { height: 100%; background: var(--color-primary); transition: width .25s ease; }
-.stat-meta { text-align: right; font-size: 12px; color: var(--color-text-muted); }
-
-@media (max-width: 480px) { .grid { grid-template-columns: repeat(5, 1fr); } }
-</style>

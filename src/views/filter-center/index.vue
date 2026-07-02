@@ -14,75 +14,60 @@ const headTailRef = ref<InstanceType<typeof HeadTailFilter> | null>(null)
 const zodiacRef = ref<InstanceType<typeof ZodiacFilter> | null>(null)
 const conditionRef = ref<InstanceType<typeof ConditionFilter> | null>(null)
 
+const tabs = [
+  { name: 'head-tail' as const, label: '头尾筛选' },
+  { name: 'zodiac' as const, label: '生肖筛选' },
+  { name: 'condition' as const, label: '条件筛选' },
+]
+
 onMounted(() => {
-    const tab = route.query.tab as string
-    if (tab === 'zodiac') {
-        activeTab.value = 'zodiac'
-    } else if (tab === 'condition') {
-        activeTab.value = 'condition'
-    } else if (tab === 'head-tail') {
-        activeTab.value = 'head-tail'
-    }
+  const tab = route.query.tab as string
+  if (tab === 'zodiac') activeTab.value = 'zodiac'
+  else if (tab === 'condition') activeTab.value = 'condition'
+  else if (tab === 'head-tail') activeTab.value = 'head-tail'
 })
 
 watch(activeTab, (newVal) => {
-    router.replace({ query: { ...route.query, tab: newVal } })
+  router.replace({ query: { ...route.query, tab: newVal } })
 })
 
 function onRefresh() {
-    if (activeTab.value === 'head-tail') {
-        headTailRef.value?.refresh?.()
-    } else if (activeTab.value === 'condition') {
-        conditionRef.value?.refresh?.()
-    } else {
-        zodiacRef.value?.refresh?.()
-    }
+  if (activeTab.value === 'head-tail') headTailRef.value?.refresh?.()
+  else if (activeTab.value === 'condition') conditionRef.value?.refresh?.()
+  else zodiacRef.value?.refresh?.()
 }
 </script>
 
 <template>
-  <div class="page filter-center">
-    <header class="header-fixed">
-      <van-nav-bar title="筛选中心" class="top-nav">
-        <template #right>
-            <van-icon name="replay" size="18" @click="onRefresh" />
-        </template>
-      </van-nav-bar>
-    </header>
-    
-    <div class="main-content">
-         <van-tabs v-model:active="activeTab" sticky offset-top="46px" swipeable animated>
-            <van-tab title="头尾筛选" name="head-tail">
-                <keep-alive>
-                    <HeadTailFilter ref="headTailRef" />
-                </keep-alive>
-            </van-tab>
-            <van-tab title="生肖筛选" name="zodiac">
-                <keep-alive>
-                    <ZodiacFilter ref="zodiacRef" />
-                </keep-alive>
-            </van-tab>
-            <van-tab title="条件筛选" name="condition">
-                <keep-alive>
-                    <ConditionFilter ref="conditionRef" />
-                </keep-alive>
-            </van-tab>
-        </van-tabs>
+  <div class="flex flex-col min-h-screen bg-[#f3f4f6]">
+    <!-- Navbar -->
+    <div class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm flex items-center justify-between px-4 py-3">
+      <h1 class="text-base font-bold text-[#1f2937]">筛选中心</h1>
+      <button type="button" class="btn btn-text btn-circle btn-sm" @click="onRefresh" aria-label="刷新">
+        <span class="icon-[tabler--reload] size-4.5"></span>
+      </button>
+    </div>
+
+    <!-- Custom Tabs -->
+    <div class="sticky top-[49px] z-40 bg-white border-b border-gray-200 px-2">
+      <div class="flex">
+        <button
+          v-for="tab in tabs" :key="tab.name"
+          type="button"
+          class="flex-1 py-3 text-sm font-medium border-b-2 transition-colors"
+          :class="activeTab === tab.name ? 'border-[#2f3137] text-[#2f3137]' : 'border-transparent text-gray-500'"
+          @click="activeTab = tab.name"
+        >{{ tab.label }}</button>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="flex-1">
+      <KeepAlive>
+        <HeadTailFilter v-if="activeTab === 'head-tail'" ref="headTailRef" />
+        <ZodiacFilter v-else-if="activeTab === 'zodiac'" ref="zodiacRef" />
+        <ConditionFilter v-else-if="activeTab === 'condition'" ref="conditionRef" />
+      </KeepAlive>
     </div>
   </div>
 </template>
-
-<style scoped>
-.page { display: flex; flex-direction: column; min-height: 100%; background: #f3f4f6; }
-.header-fixed { position: sticky; top: 0; z-index: 1000; }
-.main-content { flex: 1; display: flex; flex-direction: column; }
-.top-nav {
-  --van-nav-bar-background: #ffffff;
-  --van-nav-bar-title-text-color: #1f2533;
-  --van-nav-bar-icon-color: #1f2533;
-  border-bottom: 1px solid var(--color-border);
-  box-shadow: var(--shadow-soft);
-}
-:deep(.van-tabs__content) { flex: 1; }
-:deep(.van-tab__pane) { height: 100%; }
-</style>
