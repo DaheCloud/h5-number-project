@@ -24,6 +24,38 @@ export function useFilterLogic() {
     return number?.wave.key || ''
   }
 
+  const getNumberById = (id: number): LotteryNumber | undefined => {
+    return allNumbers.value.find((num) => num.id === id)
+  }
+
+  /** 按生肖分组当前筛选结果，返回 [生肖, 号码详情[]] 数组 */
+  const groupedByZodiac = computed(() => {
+    const groups: { zodiac: string; items: { num: string; wave: string; wuxing: string }[] }[] = []
+    const zodiacOrder = ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪']
+    const map = new Map<string, { num: string; wave: string; wuxing: string }[]>()
+
+    for (const numStr of filteredNumbers.value) {
+      const id = Number(numStr)
+      const numObj = allNumbers.value.find((n) => n.id === id)
+      if (!numObj) continue
+      const zodiacLabel = numObj.zodiac.label
+      if (!map.has(zodiacLabel)) map.set(zodiacLabel, [])
+      map.get(zodiacLabel)!.push({
+        num: numStr,
+        wave: numObj.wave.key,
+        wuxing: numObj.wuxing.label,
+      })
+    }
+
+    for (const z of zodiacOrder) {
+      const items = map.get(z)
+      if (items && items.length > 0) {
+        groups.push({ zodiac: z, items })
+      }
+    }
+    return groups
+  })
+
   const filteredNumbers = computed(() => {
     if (selectedFilters.value.length === 0 && !searchText.value) {
       return []
@@ -150,6 +182,8 @@ export function useFilterLogic() {
     toggleExclusion,
     onSave,
     onLoad,
-    getWaveColorById
+    getWaveColorById,
+    getNumberById,
+    groupedByZodiac
   }
 }

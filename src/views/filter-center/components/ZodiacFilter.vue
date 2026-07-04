@@ -34,7 +34,7 @@ defineExpose({ refresh: () => { selected.value=[]; toast('已刷新生肖筛选'
       <div class="u-section">
         <span class="text-sm text-base-content">已选生肖</span>
         <div class="flex flex-wrap gap-2 mt-2">
-          <span v-for="n in selected" :key="n" class="inline-flex items-center justify-center min-w-[48px] h-9 px-2 rounded-full bg-primary text-white font-semibold text-sm">{{ n }}</span>
+          <span v-for="n in selected" :key="n" class="inline-flex items-center justify-center min-w-[48px] h-9 px-2 rounded-full bg-primary text-primary-content font-semibold text-sm">{{ n }}</span>
           <span v-if="selected.length===0" class="text-sm text-secondary">暂无选择</span>
         </div>
         <div class="flex gap-2 mt-3">
@@ -48,7 +48,7 @@ defineExpose({ refresh: () => { selected.value=[]; toast('已刷新生肖筛选'
       <div class="u-section">
         <div class="grid grid-cols-3 gap-2">
           <button v-for="name in zodiacs" :key="name" type="button"
-            class="u-chip" :class="selected.includes(name)?'is-active':''" @click="toggle(name)">{{ name }}</button>
+            class="u-chip rounded-lg" :class="selected.includes(name)?'is-active':''" @click="toggle(name)">{{ name }}</button>
         </div>
       </div>
 
@@ -65,7 +65,7 @@ defineExpose({ refresh: () => { selected.value=[]; toast('已刷新生肖筛选'
               <button class="btn btn-xs btn-circle btn-ghost text-error" @click="deleteGroup(i)"><span class="icon-[tabler--trash] size-3.5"></span></button>
             </div>
             <div class="flex flex-wrap gap-2 mt-1">
-              <span v-for="n in g" :key="n" class="inline-flex items-center justify-center min-w-[48px] h-9 px-2 rounded-full bg-primary text-white font-semibold text-sm">{{ n }}</span>
+              <span v-for="n in g" :key="n" class="inline-flex items-center justify-center min-w-[48px] h-9 px-2 rounded-full bg-primary text-primary-content font-semibold text-sm">{{ n }}</span>
             </div>
           </div>
         </div>

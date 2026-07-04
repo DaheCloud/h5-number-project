@@ -64,7 +64,7 @@ defineExpose({ refresh: () => { selectedHeads.value = []; selectedUnits.value = 
       <div class="u-section">
         <span class="text-sm text-base-content">已选{{ activeTab === 'head' ? '头数' : '尾数' }}</span>
         <div class="flex flex-wrap gap-2 mt-2">
-          <span v-for="n in (activeTab==='head'?selectedHeads:selectedUnits)" :key="n" class="inline-flex items-center justify-center min-w-[48px] h-9 px-2 rounded-full bg-primary text-white font-semibold text-sm">{{ n }}</span>
+          <span v-for="n in (activeTab==='head'?selectedHeads:selectedUnits)" :key="n" class="inline-flex items-center justify-center min-w-[48px] h-9 px-2 rounded-full bg-primary text-primary-content font-semibold text-sm">{{ n }}</span>
           <span v-if="(activeTab==='head'?selectedHeads:selectedUnits).length===0" class="text-sm text-secondary">暂无选择</span>
         </div>
         <div class="flex gap-2 mt-3">
@@ -77,8 +77,8 @@ defineExpose({ refresh: () => { selectedHeads.value = []; selectedUnits.value = 
       <!-- Tab Switcher -->
       <div class="u-section">
         <div class="tabs tabs-boxed">
-          <button class="tab" :class="activeTab==='head'?'tab-active':''" @click="activeTab='head'">头数</button>
-          <button class="tab" :class="activeTab==='tail'?'tab-active':''" @click="activeTab='tail'">尾数</button>
+          <button class="tab rounded-lg" :class="activeTab==='head'?'tab-active':''" @click="activeTab='head'">头数</button>
+          <button class="tab rounded-lg" :class="activeTab==='tail'?'tab-active':''" @click="activeTab='tail'">尾数</button>
         </div>
       </div>
 
@@ -105,7 +105,7 @@ defineExpose({ refresh: () => { selectedHeads.value = []; selectedUnits.value = 
               <button class="btn btn-xs btn-circle btn-ghost text-error" @click="deleteGroup(i)"><span class="icon-[tabler--trash] size-3.5"></span></button>
             </div>
             <div class="flex flex-wrap gap-2 mt-1">
-              <span v-for="n in g" :key="n" class="inline-flex items-center justify-center min-w-[48px] h-9 px-2 rounded-full bg-primary text-white font-semibold text-sm">{{ n }}</span>
+              <span v-for="n in g" :key="n" class="inline-flex items-center justify-center min-w-[48px] h-9 px-2 rounded-full bg-primary text-primary-content font-semibold text-sm">{{ n }}</span>
             </div>
           </div>
         </div>

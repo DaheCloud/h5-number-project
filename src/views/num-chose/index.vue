@@ -232,9 +232,7 @@ async function copyNumbers() { if (selectedNumbers.value.length === 0) { toast('
     <div class="sticky top-0 z-50 bg-base-100 border-b border-base-200 flex items-center justify-between px-3 h-12">
       <div class="w-8"></div>
       <h1 class="text-base font-bold text-base-content">选号助手</h1>
-      <button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-base-200 transition-colors">
-        <span class="icon-[tabler--help-circle] size-5 text-secondary"></span>
-      </button>
+      <div class="w-8"></div>
     </div>
 
     <div class="p-3 space-y-3 pb-24">
@@ -278,7 +276,7 @@ async function copyNumbers() { if (selectedNumbers.value.length === 0) { toast('
             v-for="tab in tabs"
             :key="tab.key"
             class="flex flex-col items-center justify-center gap-1 py-2.5 px-1 rounded-lg text-xs transition-colors"
-            :class="activeTab === tab.key ? 'bg-primary text-white shadow-sm' : 'text-secondary hover:bg-base-200'"
+            :class="activeTab === tab.key ? 'bg-primary text-primary-content shadow-sm' : 'text-secondary hover:bg-base-200'"
             @click="activeTab = tab.key"
           >
             <span :class="[tab.icon, 'size-4']"></span>
@@ -315,11 +313,11 @@ async function copyNumbers() { if (selectedNumbers.value.length === 0) { toast('
           <div v-for="opt in zodiacCardList" :key="opt.key" class="relative flex flex-col items-center gap-2 p-2 rounded-xl border-2 transition-all cursor-pointer"
             :class="isZodiacActive(opt.key)?'border-primary bg-primary/5 translate-y-[-2px]':'border-base-300'"
             @click="toggleZodiac(opt.key)">
-            <div v-if="isZodiacActive(opt.key)" class="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-[11px]">✓</div>
+            <div v-if="isZodiacActive(opt.key)" class="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-primary text-primary-content flex items-center justify-center text-[11px]">✓</div>
             <div class="w-8 h-8 rounded-full bg-base-200 flex items-center justify-center border-2" :class="isZodiacActive(opt.key)?'border-primary':'border-transparent'"><span class="text-xl">{{ opt.emoji }}</span></div>
             <span class="text-sm text-base-content">{{ opt.name }}</span>
             <div class="flex flex-wrap gap-1 justify-center">
-              <span v-for="n in numbersByZodiac[opt.key]" :key="n" class="min-w-[28px] h-6 px-1.5 rounded-full text-xs inline-flex items-center justify-center border cursor-pointer transition-colors" :class="{ 'bg-primary text-white border-primary': selectedNumbers.includes(n), 'bg-error/10 border-error/30 text-error': !selectedNumbers.includes(n) && recordById.get(n)?.wave.key==='red', 'bg-success/10 border-success/30 text-success': !selectedNumbers.includes(n) && recordById.get(n)?.wave.key==='green', 'bg-info/10 border-info/30 text-info': !selectedNumbers.includes(n) && recordById.get(n)?.wave.key==='blue', 'bg-base-100 border-base-300 text-secondary': !selectedNumbers.includes(n) && !['red','green','blue'].includes(recordById.get(n)?.wave.key) }" @click.stop="handleSelect(n)">{{ pad2(n) }}</span>
+              <span v-for="n in numbersByZodiac[opt.key]" :key="n" class="min-w-[28px] h-6 px-1.5 rounded-full text-xs inline-flex items-center justify-center border cursor-pointer transition-colors" :class="{ 'bg-primary text-primary-content border-primary': selectedNumbers.includes(n), 'bg-error/10 border-error/30 text-error': !selectedNumbers.includes(n) && recordById.get(n)?.wave.key==='red', 'bg-success/10 border-success/30 text-success': !selectedNumbers.includes(n) && recordById.get(n)?.wave.key==='green', 'bg-info/10 border-info/30 text-info': !selectedNumbers.includes(n) && recordById.get(n)?.wave.key==='blue', 'bg-base-100 border-base-300 text-secondary': !selectedNumbers.includes(n) && !['red','green','blue'].includes(recordById.get(n)?.wave.key) }" @click.stop="handleSelect(n)">{{ pad2(n) }}</span>
             </div>
           </div>
         </div>
@@ -366,9 +364,9 @@ async function copyNumbers() { if (selectedNumbers.value.length === 0) { toast('
           <div class="flex items-start gap-3 py-3">
             <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">波色</div>
             <div class="flex flex-wrap gap-2 flex-1">
-              <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveColors.includes('red') ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveColor('red')">红波</button>
-              <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveColors.includes('green') ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveColor('green')">绿波</button>
-              <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveColors.includes('blue') ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveColor('blue')">蓝波</button>
+              <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveColors.includes('red') ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveColor('red')">红波</button>
+              <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveColors.includes('green') ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveColor('green')">绿波</button>
+              <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveColors.includes('blue') ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveColor('blue')">蓝波</button>
             </div>
           </div>
 
@@ -376,9 +374,9 @@ async function copyNumbers() { if (selectedNumbers.value.length === 0) { toast('
           <div class="flex items-start gap-3 py-3">
             <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">单双</div>
             <div class="flex flex-wrap gap-2 flex-1">
-              <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="oddEvenFilter==='odd' ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="oddEvenFilter='odd'">单</button>
-              <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="oddEvenFilter==='even' ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="oddEvenFilter='even'">双</button>
-              <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="oddEvenFilter==='all' ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="oddEvenFilter='all'">全部</button>
+              <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="oddEvenFilter==='odd' ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="oddEvenFilter='odd'">单</button>
+              <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="oddEvenFilter==='even' ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="oddEvenFilter='even'">双</button>
+              <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="oddEvenFilter==='all' ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="oddEvenFilter='all'">全部</button>
             </div>
           </div>
 
@@ -386,7 +384,7 @@ async function copyNumbers() { if (selectedNumbers.value.length === 0) { toast('
           <div class="flex items-start gap-3 py-3">
             <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">五行</div>
             <div class="flex flex-wrap gap-2 flex-1">
-              <button v-for="opt in elementOptions" :key="`fe-${opt.key}`" class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedElementsFilter.includes(opt.key) ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleElementFilter(opt.key)">{{ opt.label }}</button>
+              <button v-for="opt in elementOptions" :key="`fe-${opt.key}`" class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedElementsFilter.includes(opt.key) ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleElementFilter(opt.key)">{{ opt.label }}</button>
             </div>
           </div>
 
@@ -394,7 +392,7 @@ async function copyNumbers() { if (selectedNumbers.value.length === 0) { toast('
           <div class="flex items-start gap-3 py-3">
             <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">生肖</div>
             <div class="flex flex-wrap gap-2 flex-1">
-              <button v-for="opt in zodiacFilterOptions" :key="`zf-${opt.key}`" class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedZodiacsFilter.includes(opt.key) ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleZodiacFilter(opt.key)">{{ opt.name }}</button>
+              <button v-for="opt in zodiacFilterOptions" :key="`zf-${opt.key}`" class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedZodiacsFilter.includes(opt.key) ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleZodiacFilter(opt.key)">{{ opt.name }}</button>
               <button class="px-2 py-1 text-xs text-primary flex items-center gap-0.5" @click="zodiacFilterExpanded = !zodiacFilterExpanded">
                 {{ zodiacFilterExpanded ? '收起' : '更多' }}
                 <span class="icon-[tabler--chevron-down] size-3 transition-transform" :class="zodiacFilterExpanded ? 'rotate-180' : ''"></span>
@@ -406,7 +404,7 @@ async function copyNumbers() { if (selectedNumbers.value.length === 0) { toast('
           <div class="flex items-start gap-3 py-3">
             <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">合数</div>
             <div class="flex flex-wrap gap-2 flex-1">
-              <button v-for="n in [1,2,3,4,5,6,7,8,9,10,11,12,13]" :key="`he-${n}`" class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedHeShuFilter.includes(`${n}合`) ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleHeShuFilter(`${n}合`)">{{ n }}合</button>
+              <button v-for="n in [1,2,3,4,5,6,7,8,9,10,11,12,13]" :key="`he-${n}`" class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedHeShuFilter.includes(`${n}合`) ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleHeShuFilter(`${n}合`)">{{ n }}合</button>
             </div>
           </div>
 
@@ -423,9 +421,9 @@ async function copyNumbers() { if (selectedNumbers.value.length === 0) { toast('
             <div class="flex items-start gap-3 py-3">
               <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">合单双</div>
               <div class="flex flex-wrap gap-2 flex-1">
-                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="sumOddEvenFilter==='oddSum' ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="sumOddEvenFilter='oddSum'">合单</button>
-                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="sumOddEvenFilter==='evenSum' ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="sumOddEvenFilter='evenSum'">合双</button>
-                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="sumOddEvenFilter==='all' ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="sumOddEvenFilter='all'">全部</button>
+                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="sumOddEvenFilter==='oddSum' ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="sumOddEvenFilter='oddSum'">合单</button>
+                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="sumOddEvenFilter==='evenSum' ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="sumOddEvenFilter='evenSum'">合双</button>
+                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="sumOddEvenFilter==='all' ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="sumOddEvenFilter='all'">全部</button>
               </div>
             </div>
 
@@ -433,12 +431,12 @@ async function copyNumbers() { if (selectedNumbers.value.length === 0) { toast('
             <div class="flex items-start gap-3 py-3">
               <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">波色单双</div>
               <div class="flex flex-wrap gap-2 flex-1">
-                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveOddEven.includes('red-odd') ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveOddEven('red-odd')">红单</button>
-                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveOddEven.includes('red-even') ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveOddEven('red-even')">红双</button>
-                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveOddEven.includes('green-odd') ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveOddEven('green-odd')">绿单</button>
-                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveOddEven.includes('green-even') ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveOddEven('green-even')">绿双</button>
-                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveOddEven.includes('blue-odd') ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveOddEven('blue-odd')">蓝单</button>
-                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveOddEven.includes('blue-even') ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveOddEven('blue-even')">蓝双</button>
+                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveOddEven.includes('red-odd') ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveOddEven('red-odd')">红单</button>
+                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveOddEven.includes('red-even') ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveOddEven('red-even')">红双</button>
+                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveOddEven.includes('green-odd') ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveOddEven('green-odd')">绿单</button>
+                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveOddEven.includes('green-even') ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveOddEven('green-even')">绿双</button>
+                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveOddEven.includes('blue-odd') ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveOddEven('blue-odd')">蓝单</button>
+                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveOddEven.includes('blue-even') ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveOddEven('blue-even')">蓝双</button>
               </div>
             </div>
 
@@ -446,9 +444,9 @@ async function copyNumbers() { if (selectedNumbers.value.length === 0) { toast('
             <div class="flex items-start gap-3 py-3">
               <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">天地肖</div>
               <div class="flex flex-wrap gap-2 flex-1">
-                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="skyEarthFilter==='sky' ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="skyEarthFilter='sky'">天肖</button>
-                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="skyEarthFilter==='earth' ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="skyEarthFilter='earth'">地肖</button>
-                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="skyEarthFilter==='all' ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="skyEarthFilter='all'">全部</button>
+                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="skyEarthFilter==='sky' ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="skyEarthFilter='sky'">天肖</button>
+                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="skyEarthFilter==='earth' ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="skyEarthFilter='earth'">地肖</button>
+                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="skyEarthFilter==='all' ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="skyEarthFilter='all'">全部</button>
               </div>
             </div>
 
@@ -456,9 +454,9 @@ async function copyNumbers() { if (selectedNumbers.value.length === 0) { toast('
             <div class="flex items-start gap-3 py-3">
               <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">家野肖</div>
               <div class="flex flex-wrap gap-2 flex-1">
-                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="homeWildFilter==='home' ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="homeWildFilter='home'">家肖</button>
-                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="homeWildFilter==='wild' ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="homeWildFilter='wild'">野肖</button>
-                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="homeWildFilter==='all' ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="homeWildFilter='all'">全部</button>
+                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="homeWildFilter==='home' ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="homeWildFilter='home'">家肖</button>
+                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="homeWildFilter==='wild' ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="homeWildFilter='wild'">野肖</button>
+                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="homeWildFilter==='all' ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="homeWildFilter='all'">全部</button>
               </div>
             </div>
 
@@ -466,7 +464,7 @@ async function copyNumbers() { if (selectedNumbers.value.length === 0) { toast('
             <div class="flex items-start gap-3 py-3">
               <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">门数</div>
               <div class="flex flex-wrap gap-2 flex-1">
-                <button v-for="n in [1,2,3,4,5]" :key="`men-${n}`" class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedMenFilter.includes(`${n}门`) ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleMenFilter(`${n}门`)">{{ n }}门</button>
+                <button v-for="n in [1,2,3,4,5]" :key="`men-${n}`" class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedMenFilter.includes(`${n}门`) ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleMenFilter(`${n}门`)">{{ n }}门</button>
               </div>
             </div>
 
@@ -474,7 +472,7 @@ async function copyNumbers() { if (selectedNumbers.value.length === 0) { toast('
             <div class="flex items-start gap-3 py-3">
               <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">段数</div>
               <div class="flex flex-wrap gap-2 flex-1">
-                <button v-for="n in [1,2,3,4,5,6,7]" :key="`duan-${n}`" class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedDuanFilter.includes(`${n}段`) ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleDuanFilter(`${n}段`)">{{ n }}段</button>
+                <button v-for="n in [1,2,3,4,5,6,7]" :key="`duan-${n}`" class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedDuanFilter.includes(`${n}段`) ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleDuanFilter(`${n}段`)">{{ n }}段</button>
               </div>
             </div>
 
@@ -482,7 +480,7 @@ async function copyNumbers() { if (selectedNumbers.value.length === 0) { toast('
             <div class="flex items-start gap-3 py-3">
               <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">头数</div>
               <div class="flex flex-wrap gap-2 flex-1">
-                <button v-for="h in availableHeads" :key="`head-${h}`" class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedHeads.includes(h) ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleHead(h)">{{ h }}头</button>
+                <button v-for="h in availableHeads" :key="`head-${h}`" class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedHeads.includes(h) ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleHead(h)">{{ h }}头</button>
               </div>
             </div>
 
@@ -490,7 +488,7 @@ async function copyNumbers() { if (selectedNumbers.value.length === 0) { toast('
             <div class="flex items-start gap-3 py-3">
               <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">尾数</div>
               <div class="flex flex-wrap gap-2 flex-1">
-                <button v-for="u in availableUnits" :key="`unit-${u}`" class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedUnits.includes(u) ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleUnit(u)">{{ u }}尾</button>
+                <button v-for="u in availableUnits" :key="`unit-${u}`" class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedUnits.includes(u) ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleUnit(u)">{{ u }}尾</button>
               </div>
             </div>
           </div>
@@ -518,7 +516,7 @@ async function copyNumbers() { if (selectedNumbers.value.length === 0) { toast('
 
       <!-- Save Bar -->
       <div class="flex flex-col gap-2 pt-1">
-        <button class="w-full h-11 rounded-xl bg-primary text-white text-sm font-semibold shadow-md shadow-accent active:scale-[0.98] transition-transform flex items-center justify-center gap-1.5" @click="saveAndCopy">
+        <button class="w-full h-11 rounded-xl bg-primary text-primary-content text-sm font-semibold shadow-md shadow-accent active:scale-[0.98] transition-transform flex items-center justify-center gap-1.5" @click="saveAndCopy">
           <span class="icon-[tabler--copy] size-4"></span>
           复制保存
         </button>

@@ -28,11 +28,11 @@ onMounted(() => {
   <div class="flex flex-col min-h-screen" :style="{ backgroundColor: themeStore.currentTheme.pageBg }">
     <!-- 右上角设置按钮 -->
     <button
-      class="fixed top-3 right-3 z-[100] w-9 h-9 rounded-full bg-base-100 border border-base-300 shadow-md flex items-center justify-center transition-transform active:scale-90"
+      class="fixed top-2.5 right-2.5 z-[100] w-7 h-7 rounded-full bg-base-100 border border-base-300 shadow-sm flex items-center justify-center transition-transform active:scale-90"
       @click="showThemePicker = true"
       aria-label="主题设置"
     >
-      <span class="icon-[tabler--palette] size-5 text-base-content"></span>
+      <span class="icon-[tabler--palette] size-4 text-base-content"></span>
     </button>
 
     <main class="flex-1 w-full max-w-[768px] mx-auto pb-[calc(5rem+env(safe-area-inset-bottom))]">

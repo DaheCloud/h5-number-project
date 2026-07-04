@@ -9,17 +9,17 @@ let toastContainer: HTMLDivElement | null = null;
 function getToastContainer(): HTMLDivElement {
   if (!toastContainer) {
     toastContainer = document.createElement('div');
-    toastContainer.className = 'fixed top-6 left-1/2 -translate-x-1/2 z-[9999] flex flex-col items-center gap-2 pointer-events-none';
+    toastContainer.className = 'mini-toast-container';
     document.body.appendChild(toastContainer);
   }
   return toastContainer;
 }
 
-const typeStyles: Record<string, string> = {
-  success: 'alert-soft-success',
-  error: 'alert-soft-error',
-  warning: 'alert-soft-warning',
-  info: 'alert-soft-info',
+const typeIcons: Record<string, string> = {
+  success: '✓',
+  error: '✕',
+  warning: '!',
+  info: 'i',
 };
 
 export function toast(msg: string, type: 'success' | 'error' | 'warning' | 'info' = 'info') {
@@ -30,30 +30,92 @@ export function toast(msg: string, type: 'success' | 'error' | 'warning' | 'info
     toastTimer = null;
   }
 
-  // 清除旧 toast
-  const existingEls = container.querySelectorAll('.toast-item');
-  if (existingEls.length > 2) {
-    existingEls[0].remove();
-  }
+  // 清除旧 toast（最多保留1个）
+  const existingEls = container.querySelectorAll('.mini-toast-item');
+  existingEls.forEach((el) => el.remove());
 
   const el = document.createElement('div');
-  el.className = `toast-item alert ${typeStyles[type] || 'alert-soft-info'} pointer-events-auto shadow-lg transition-all duration-300 translate-y-0 opacity-100 max-w-xs`;
-  el.style.cssText = 'animation: toast-in 0.3s ease-out forwards;';
-  el.innerHTML = `<span class="text-sm">${msg}</span>`;
+  el.className = `mini-toast-item mini-toast mini-toast--${type}`;
+  el.innerHTML = `<span class="mini-toast__icon">${typeIcons[type] || typeIcons.info}</span><span class="mini-toast__msg">${msg}</span>`;
   container.appendChild(el);
 
   toastTimer = setTimeout(() => {
-    el.style.opacity = '0';
-    el.style.transform = 'translateY(-12px)';
-    setTimeout(() => el.remove(), 300);
+    el.classList.add('mini-toast--leave');
+    setTimeout(() => el.remove(), 220);
     toastTimer = null;
-  }, 2500);
+  }, 1800);
 
-  // 注入动画
-  if (!document.getElementById('toast-keyframes')) {
+  // 注入样式（仅一次）
+  if (!document.getElementById('mini-toast-styles')) {
     const style = document.createElement('style');
-    style.id = 'toast-keyframes';
-    style.textContent = '@keyframes toast-in { from { opacity:0; transform:translateY(-12px); } to { opacity:1; transform:translateY(0); } }';
+    style.id = 'mini-toast-styles';
+    style.textContent = `
+      .mini-toast-container {
+        position: fixed;
+        top: 56px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        pointer-events: none;
+      }
+      .mini-toast {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 30px;
+        padding: 0 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 1;
+        background: color-mix(in srgb, var(--color-base-100) 92%, transparent);
+        color: var(--color-base-content);
+        border: 1px solid var(--color-base-300);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        backdrop-filter: blur(12px);
+        pointer-events: auto;
+        animation: mini-toast-in 0.2s ease-out;
+        white-space: nowrap;
+        max-width: 80vw;
+      }
+      .mini-toast--leave {
+        animation: mini-toast-out 0.2s ease-in forwards;
+      }
+      .mini-toast__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        font-size: 10px;
+        font-weight: 700;
+        flex-shrink: 0;
+      }
+      .mini-toast__msg {
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      /* 类型色 */
+      .mini-toast--success { color: var(--color-success-content, #fff); }
+      .mini-toast--success .mini-toast__icon { background: var(--color-success); color: var(--color-success-content, #fff); }
+      .mini-toast--error { color: var(--color-error-content, #fff); }
+      .mini-toast--error .mini-toast__icon { background: var(--color-error); color: var(--color-error-content, #fff); }
+      .mini-toast--warning .mini-toast__icon { background: var(--color-warning); color: var(--color-warning-content, #0f0f10); }
+      .mini-toast--info .mini-toast__icon { background: var(--color-info); color: var(--color-info-content, #fff); }
+
+      @keyframes mini-toast-in {
+        from { opacity: 0; transform: translateY(-6px) scale(0.96); }
+        to   { opacity: 1; transform: translateY(0) scale(1); }
+      }
+      @keyframes mini-toast-out {
+        from { opacity: 1; transform: translateY(0) scale(1); }
+        to   { opacity: 0; transform: translateY(-6px) scale(0.96); }
+      }
+    `;
     document.head.appendChild(style);
   }
 }

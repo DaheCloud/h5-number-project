@@ -50,12 +50,12 @@ function onRefresh() {
 
     <!-- Custom Tabs -->
     <div class="sticky top-12 z-40 bg-base-100 border-b border-base-300 px-2">
-      <div class="flex">
+      <div class="flex gap-1 py-2">
         <button
           v-for="tab in tabs" :key="tab.name"
           type="button"
-          class="flex-1 py-3 text-sm font-medium border-b-2 transition-colors"
-          :class="activeTab === tab.name ? 'border-primary text-primary' : 'border-transparent text-secondary'"
+          class="flex-1 py-2 text-sm font-medium rounded-lg transition-colors"
+          :class="activeTab === tab.name ? 'bg-primary text-primary-content' : 'text-secondary hover:bg-base-200'"
           @click="activeTab = tab.name"
         >{{ tab.label }}</button>
       </div>

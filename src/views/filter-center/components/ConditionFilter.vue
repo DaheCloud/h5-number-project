@@ -90,7 +90,7 @@ defineExpose({ refresh: () => { selectedConditions.value = []; selectedZodiacs.v
       <div class="u-section">
         <span class="text-sm text-base-content">已选条件</span>
         <div class="flex flex-wrap gap-2 mt-2">
-          <span v-for="item in selected" :key="item" class="inline-flex items-center justify-center min-w-[48px] min-h-9 px-2.5 rounded-full bg-primary text-white font-semibold text-sm">{{ item }}</span>
+          <span v-for="item in selected" :key="item" class="inline-flex items-center justify-center min-w-[48px] min-h-9 px-2.5 rounded-full bg-primary text-primary-content font-semibold text-sm">{{ item }}</span>
           <span v-if="selected.length===0" class="text-sm text-secondary">暂无选择</span>
         </div>
         <div class="flex gap-2 mt-3">
@@ -142,7 +142,7 @@ defineExpose({ refresh: () => { selectedConditions.value = []; selectedZodiacs.v
               <button class="btn btn-xs btn-circle btn-ghost text-error" @click="deleteGroup(idx)"><span class="icon-[tabler--trash] size-3.5"></span></button>
             </div>
             <div class="space-y-1.5">
-              <div><span class="text-xs text-secondary">条件组</span><div class="flex flex-wrap gap-2 mt-1"><span v-for="item in group.conditions" :key="item" class="inline-flex items-center justify-center min-w-[48px] min-h-9 px-2.5 rounded-full bg-primary text-white font-semibold text-sm">{{ item }}</span><span v-if="!group.conditions.length" class="text-xs text-secondary">无</span></div></div>
+              <div><span class="text-xs text-secondary">条件组</span><div class="flex flex-wrap gap-2 mt-1"><span v-for="item in group.conditions" :key="item" class="inline-flex items-center justify-center min-w-[48px] min-h-9 px-2.5 rounded-full bg-primary text-primary-content font-semibold text-sm">{{ item }}</span><span v-if="!group.conditions.length" class="text-xs text-secondary">无</span></div></div>
               <div><span class="text-xs text-secondary">额外生肖</span><div class="flex flex-wrap gap-2 mt-1"><span v-for="z in group.zodiacs" :key="z" class="inline-flex items-center justify-center min-w-[48px] min-h-9 px-2.5 rounded-full bg-base-200 border border-base-300 text-sm">{{ z }}</span><span v-if="!group.zodiacs.length" class="text-xs text-secondary">无</span></div></div>
             </div>
             <div><span class="text-xs text-secondary">对应生肖（含重复）</span><div class="flex flex-wrap gap-2 mt-1">
