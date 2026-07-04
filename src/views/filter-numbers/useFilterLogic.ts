@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
-import { lotteryDataService, type LotteryNumber } from '../../services/lotteryData'
-import { matchesFilter, getFilterCategory, type FilterCategory } from '@/utils/numberMatcher'
+import { lotteryDataService, type LotteryNumber } from '@/services/lotteryData'
+import { matchesFilter, getFilterCategory } from '@/utils/numberMatcher'
 import { toast } from '@/utils/feedback'
 
 export function useFilterLogic() {
@@ -43,6 +43,7 @@ export function useFilterLogic() {
       result = result.filter(numObj => {
         return Object.keys(filtersByCategory).every(category => {
           const filtersInCat = filtersByCategory[category]
+          if (!filtersInCat) return true
           return filtersInCat.some(filter => matchesFilter(numObj, filter))
         })
       })

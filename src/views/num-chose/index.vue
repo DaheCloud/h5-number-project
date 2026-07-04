@@ -2,7 +2,7 @@
 defineOptions({ name: 'NumChosePage' })
 import { ref, computed, onMounted, watch } from 'vue'
 import NumberButton from './components/NumberButton.vue'
-import { lotteryDataService, type ZodiacKey, type WuxingKey, type WaveKey } from '../../services/lotteryData'
+import { lotteryDataService, type ZodiacKey, type WuxingKey, type WaveKey } from '@/services/lotteryData'
 import { toast } from '@/utils/feedback'
 import { getFilterIds, getOtherAttrIds } from '@/utils/numberMatcher'
 

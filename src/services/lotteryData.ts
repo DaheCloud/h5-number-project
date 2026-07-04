@@ -1,4 +1,4 @@
-import rawData from '../data/data.json';
+import rawData from '@/data/data.json'
 
 // Types
 export type ZodiacKey = 'rat' | 'ox' | 'tiger' | 'rabbit' | 'dragon' | 'snake' | 'horse' | 'goat' | 'monkey' | 'rooster' | 'dog' | 'pig';

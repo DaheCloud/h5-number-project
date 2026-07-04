@@ -1,8 +1,8 @@
-import { createRouter, createWebHashHistory } from 'vue-router';
-import { BProgress } from '@bprogress/core';
-import routes from './root';
+import { createRouter, createWebHashHistory } from 'vue-router'
+import { startProgress, doneProgress } from '@/utils/progress'
+import routes from './root'
 
-const baseUrl = import.meta.env.VITE_BASE_URL;
+const baseUrl = import.meta.env.VITE_BASE_URL
 
 const router = createRouter({
   history: createWebHashHistory(baseUrl),
@@ -10,14 +10,16 @@ const router = createRouter({
 })
 
 router.beforeEach((to, _from, next) => {
-  BProgress.start();
+  startProgress()
   const title = to?.meta?.title
   if (title) {
     document.title = title as string
   }
   next()
 })
-router.afterEach((_to) => {
-  BProgress.done();
+
+router.afterEach(() => {
+  doneProgress()
 })
-export default router;
+
+export default router
