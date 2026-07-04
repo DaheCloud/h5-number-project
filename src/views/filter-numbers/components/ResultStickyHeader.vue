@@ -31,16 +31,16 @@ const copyResults = async () => {
 </script>
 
 <template>
-  <section v-if="showHeader" class="sticky top-[49px] z-40 bg-white/98 backdrop-blur-sm px-3 py-2.5 rounded-b-2xl shadow-md border border-gray-200 border-t-0 mb-3">
+  <section v-if="showHeader" class="sticky top-12 z-40 bg-base-100/98 backdrop-blur-sm px-3 py-2.5 rounded-b-2xl shadow-md border border-base-300 border-t-0 mb-3">
     <!-- Summary -->
     <div class="flex items-center justify-between flex-wrap gap-2 mb-2">
-      <div class="flex items-center gap-2 text-[13px] text-gray-500">
-        <span>已选: <span class="text-[#111827] font-semibold text-sm">{{ selectedCount }}</span></span>
-        <span class="text-gray-200">|</span>
-        <span>结果: <span class="text-[#111827] font-semibold text-sm">{{ totalItems }}</span></span>
+      <div class="flex items-center gap-2 text-[13px] text-secondary">
+        <span>已选: <span class="text-neutral font-semibold text-sm">{{ selectedCount }}</span></span>
+        <span class="text-base-300">|</span>
+        <span>结果: <span class="text-neutral font-semibold text-sm">{{ totalItems }}</span></span>
       </div>
       <div class="flex gap-1.5">
-        <button class="btn btn-xs bg-[#1f2937] text-white border-[#1f2937] rounded-full" @click="copyResults">复制结果</button>
+        <button class="btn btn-xs bg-neutral text-neutral-content border-neutral rounded-full" @click="copyResults">复制结果</button>
         <button class="btn btn-xs btn-soft btn-error rounded-full" @click="emit('clear')">清空条件</button>
       </div>
     </div>
@@ -48,7 +48,7 @@ const copyResults = async () => {
     <!-- Filter Tags -->
     <div v-if="selectedCount > 0" class="flex gap-1.5 overflow-x-auto pb-1.5 mb-1 scrollbar-hide">
       <button v-for="item in selectedFilters" :key="item"
-        class="btn btn-xs bg-[#2f3137] text-white border-[#2f3137] rounded-full font-semibold flex-shrink-0"
+        class="btn btn-xs bg-neutral text-neutral-content border-neutral rounded-full font-semibold flex-shrink-0"
         @click="emit('removeFilter', item)">
         {{ item }}
         <span class="icon-[tabler--x] size-3 ml-1 opacity-85"></span>
@@ -60,15 +60,15 @@ const copyResults = async () => {
       <div v-for="num in filteredNumbers" :key="num"
         class="w-10 h-10 flex items-center justify-center rounded-full font-bold text-xs border shadow-sm cursor-pointer transition-transform active:scale-95 select-none"
         :class="{
-          'bg-red-50 border-red-300 text-red-700': getWaveColor(Number(num)) === 'red',
-          'bg-green-50 border-green-300 text-green-700': getWaveColor(Number(num)) === 'green',
-          'bg-blue-50 border-blue-300 text-blue-700': getWaveColor(Number(num)) === 'blue',
-          'bg-gray-50 border-gray-200 text-[#1f2937]': !['red','green','blue'].includes(getWaveColor(Number(num))),
+          'bg-error/10 border-error/30 text-error': getWaveColor(Number(num)) === 'red',
+          'bg-success/10 border-success/30 text-success': getWaveColor(Number(num)) === 'green',
+          'bg-info/10 border-info/30 text-info': getWaveColor(Number(num)) === 'blue',
+          'bg-base-200 border-base-300 text-base-content': !['red','green','blue'].includes(getWaveColor(Number(num))),
         }"
         @click="emit('toggleExclusion', num)" :title="`点击移除 ${num}`"
       >{{ num }}</div>
     </div>
-    <div v-else class="text-center text-[13px] text-gray-400 py-3 bg-[#f5f8fc] rounded-lg">无匹配号码</div>
+    <div v-else class="text-center text-[13px] text-secondary py-3 bg-base-200 rounded-lg">无匹配号码</div>
   </section>
 </template>
 

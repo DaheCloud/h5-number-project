@@ -34,74 +34,84 @@ function onClick() {
     :title="`${String(props.id).padStart(2,'0')}\n五行: ${props.fiveElements}\n生肖: ${props.chineseZodiac}\n单双: ${props.oddAndEven}\n大小: ${props.sumOddAndEven}`"
     @click="onClick"
   >
-    {{ String(props.id).padStart(2,'0') }}
+    {{ String(props.id).padStart(2, '0') }}
   </button>
 </template>
 
 <style scoped>
 .num-btn {
-  width: 40px;
-  height: 40px;
+  position: relative;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  border: 1.5px solid var(--color-border);
-  background: var(--color-surface);
-  color: var(--color-text);
+  border: 1px solid var(--color-base-300);
+  background: var(--color-base-100);
+  color: var(--color-base-content);
   font-weight: 600;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform .15s ease, box-shadow .15s ease, background-color .15s ease, border-color .15s ease, color .15s ease;
+  transition: transform .12s ease, box-shadow .12s ease, background-color .12s ease, border-color .12s ease, color .12s ease;
+  box-shadow: var(--shadow-button);
+  flex-shrink: 0;
 }
 
-.num-btn:hover { transform: scale(1.04); box-shadow: var(--shadow-soft); }
+@media (min-width: 360px) {
+  .num-btn { width: 42px; height: 42px; font-size: 15px; }
+}
 
-/* 红色调 */
+.num-btn:active:not(.is-disabled) { transform: scale(0.92); }
+
+/* 波色：鲜艳文字 + 同色系细边框 */
 .num-btn.color-red {
-  border-color: #ff4d4f;
-  color: #ff4d4f;
+  background-color: var(--color-base-100);
+  border-color: color-mix(in srgb, var(--color-error) 30%, transparent);
+  color: var(--color-error);
 }
 
-/* 绿色调 */
 .num-btn.color-green {
-  border-color: #52c41a;
-  color: #52c41a;
+  background-color: var(--color-base-100);
+  border-color: color-mix(in srgb, var(--color-success) 30%, transparent);
+  color: var(--color-success);
 }
 
-/* 蓝色调 */
 .num-btn.color-blue {
-  border-color: #1890ff;
-  color: #1890ff;
+  background-color: var(--color-base-100);
+  border-color: color-mix(in srgb, var(--color-info) 30%, transparent);
+  color: var(--color-info);
 }
 
-/* 选中态（统一样式） */
-/* 选中态保持原始波色 */
+/* 选中态：填充波色 + 白色文字 */
 .num-btn.is-active.color-red {
-  background-color: #ff4d4f;
-  color: #fff;
-  border-color: #ff4d4f;
-  box-shadow: var(--shadow-card);
+  background-color: var(--color-error);
+  color: var(--color-error-content);
+  border-color: var(--color-error);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--color-error) 35%, transparent);
 }
 
 .num-btn.is-active.color-green {
-  background-color: #52c41a;
-  color: #fff;
-  border-color: #52c41a;
-  box-shadow: var(--shadow-card);
+  background-color: var(--color-success);
+  color: var(--color-success-content);
+  border-color: var(--color-success);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--color-primary) 35%, transparent);
 }
 
 .num-btn.is-active.color-blue {
-  background-color: #1890ff;
-  color: #fff;
-  border-color: #1890ff;
-  box-shadow: var(--shadow-card);
+  background-color: var(--color-info);
+  color: var(--color-info-content);
+  border-color: var(--color-info);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--color-info) 35%, transparent);
 }
 
-/* 无波色时的选中态回退到品牌色 */
+/* 无波色时的选中态回退到翠绿主色 */
 .num-btn.is-active:not(.color-red):not(.color-green):not(.color-blue) {
   background-color: var(--color-primary);
-  color: #fff;
+  color: var(--color-primary-content);
   border-color: var(--color-primary);
-  box-shadow: var(--shadow-card);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--color-primary) 35%, transparent);
 }
 
 .num-btn.is-disabled {

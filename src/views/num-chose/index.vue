@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 defineOptions({ name: 'NumChosePage' })
 import { ref, computed, onMounted, watch } from 'vue'
 import NumberButton from './components/NumberButton.vue'
@@ -30,6 +30,17 @@ function handleManualInputConfirm() {
 const activeTab = ref<'number' | 'zodiac' | 'five' | 'condition'>('number')
 const selectedNumbers = ref<number[]>([])
 const sortOrder = ref<'asc' | 'desc' | 'none'>('none')
+const resultsExpanded = ref(true)
+const filtersExpanded = ref(true)
+const moreFiltersExpanded = ref(false)
+const zodiacFilterExpanded = ref(false)
+
+const tabs: { key: 'number' | 'zodiac' | 'five' | 'condition'; label: string; icon: string }[] = [
+  { key: 'number', label: '数字选号', icon: 'icon-[tabler--apps]' },
+  { key: 'zodiac', label: '生肖选号', icon: 'icon-[tabler--paw]' },
+  { key: 'five', label: '五行选号', icon: 'icon-[tabler--yin-yang]' },
+  { key: 'condition', label: '更多', icon: 'icon-[tabler--dots]' },
+]
 const numbers = computed(() => lotteryDataService.getAllNumbers())
 
 // 五行选项
@@ -64,6 +75,8 @@ const metaByKey: Record<ZodiacKey, { name: string; emoji: string }> = {
 
 const zodiacOptions: { key: ZodiacKey; name: string; emoji: string }[] =
   (['rat', 'ox', 'tiger', 'rabbit', 'dragon', 'snake', 'horse', 'goat', 'monkey', 'rooster', 'dog', 'pig'] as ZodiacKey[]).map(key => ({ key, name: metaByKey[key].name, emoji: metaByKey[key].emoji }))
+
+const zodiacFilterOptions = computed(() => zodiacFilterExpanded.value ? zodiacOptions : zodiacOptions.slice(0, 6))
 
 const numbersByZodiac = computed(() => {
   const acc = {} as Record<ZodiacKey, number[]>
@@ -148,7 +161,7 @@ function toggleZodiacFilter(k: ZodiacKey) { const i = selectedZodiacsFilter.valu
 const selectedMenFilter = ref<string[]>([])
 function toggleMenFilter(v: string) { const i = selectedMenFilter.value.indexOf(v); i > -1 ? selectedMenFilter.value.splice(i, 1) : selectedMenFilter.value.push(v) }
 const selectedDuanFilter = ref<string[]>([])
-function toggleDuanFilter(v: string) { const i = selectedDuanFilter.value.indexOf(v); i > -1 ? selectedDuanFilter.value.splice(i, 1) : selectedMenFilter.value.push(v); }
+function toggleDuanFilter(v: string) { const i = selectedDuanFilter.value.indexOf(v); i > -1 ? selectedDuanFilter.value.splice(i, 1) : selectedDuanFilter.value.push(v); }
 
 const selectedHeShuFilter = ref<string[]>([])
 function toggleHeShuFilter(v: string) { const i = selectedHeShuFilter.value.indexOf(v); i > -1 ? selectedHeShuFilter.value.splice(i, 1) : selectedHeShuFilter.value.push(v) }
@@ -214,113 +227,123 @@ async function copyNumbers() { if (selectedNumbers.value.length === 0) { toast('
 </script>
 
 <template>
-  <div class="flex flex-col min-h-screen bg-[#f3f4f6]">
-    <!-- Navbar -->
-    <div class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm flex items-center justify-between px-4 py-3">
-      <h1 class="text-base font-bold text-[#1f2937]">选号助手</h1>
-      <span class="icon-[tabler--settings] size-5 text-gray-600"></span>
+  <div class="flex flex-col min-h-full" style="background-color: var(--page-bg)">
+    <!-- Header -->
+    <div class="sticky top-0 z-50 bg-base-100 border-b border-base-200 flex items-center justify-between px-3 h-12">
+      <div class="w-8"></div>
+      <h1 class="text-base font-bold text-base-content">选号助手</h1>
+      <button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-base-200 transition-colors">
+        <span class="icon-[tabler--help-circle] size-5 text-secondary"></span>
+      </button>
     </div>
 
-    <div class="p-3 pb-20 space-y-3">
+    <div class="p-3 space-y-3 pb-24">
       <!-- Selected Card -->
-      <section class="bg-white rounded-2xl p-3 shadow-sm border border-gray-200" :class="{ 'sticky top-[49px] z-40': stickyEnabled }">
+      <section class="u-section py-3" :class="{ 'sticky top-12 z-40': stickyEnabled }">
         <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <span class="text-sm text-gray-700">已选号码</span>
-            <span class="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full border border-gray-200 bg-white text-xs text-gray-500">{{ selectedNumbers.length }}</span>
+          <div>
+            <div class="flex items-baseline gap-1.5">
+              <span class="text-sm font-medium text-neutral">已选号码</span>
+              <span class="text-xs text-secondary">{{ selectedNumbers.length }}/20</span>
+            </div>
+            <p v-if="selectedNumbers.length === 0" class="text-xs text-secondary mt-1">暂无选中数字</p>
           </div>
-          <div class="flex items-center gap-2">
-            <span class="text-xs text-gray-400">置顶</span>
-            <input type="checkbox" class="toggle toggle-sm" v-model="stickySelected" />
+          <div class="flex items-center gap-3 text-xs">
+            <button class="flex items-center gap-1 text-secondary hover:text-base-content transition-colors" @click="clearSelectedNumbers">
+              <span class="icon-[tabler--trash] size-3.5"></span>
+              <span>清空</span>
+            </button>
+            <button class="flex items-center gap-1 text-secondary hover:text-base-content transition-colors" @click="openManualInputDialog">
+              <span class="icon-[tabler--pencil] size-3.5"></span>
+              <span>手动输入</span>
+            </button>
           </div>
         </div>
-        <div class="flex flex-wrap gap-2 mt-2">
-          <span v-for="n in getSortedNumbers()" :key="n" class="inline-flex items-center justify-center w-9 h-9 rounded-full font-semibold text-sm cursor-pointer"
+        <div v-if="selectedNumbers.length > 0" class="flex flex-wrap gap-2 mt-3">
+          <span v-for="n in getSortedNumbers()" :key="n" class="inline-flex items-center justify-center w-9 h-9 rounded-full font-semibold text-sm cursor-pointer border transition-all"
             :class="{
-              'bg-[#2f3137] text-white': !['red','green','blue'].includes(getWaveColorById(n)),
-              'bg-red-500 text-white': getWaveColorById(n) === 'red',
-              'bg-green-500 text-white': getWaveColorById(n) === 'green',
-              'bg-blue-500 text-white': getWaveColorById(n) === 'blue',
+              'bg-primary/10 text-primary border-primary/30': !['red','green','blue'].includes(getWaveColorById(n)),
+              'bg-error/10 text-error border-error/30': getWaveColorById(n) === 'red',
+              'bg-success/10 text-success border-success/30': getWaveColorById(n) === 'green',
+              'bg-info/10 text-info border-info/30': getWaveColorById(n) === 'blue',
             }"
             @click="handleSelect(n)">{{ pad2(n) }}</span>
-          <span v-if="selectedNumbers.length===0" class="text-sm text-gray-400">暂无选中数字</span>
-        </div>
-        <div class="flex gap-2 mt-3 flex-wrap">
-          <button class="btn btn-xs btn-primary" @click="copyNumbers">复制号码</button>
-          <button class="btn btn-xs btn-ghost" @click="clearSelectedNumbers">清空</button>
-          <button class="btn btn-xs btn-ghost" @click="openManualInputDialog">
-            <span class="icon-[tabler--arrow-bar-down] size-3.5 mr-1"></span>手动输入
-          </button>
-          <button v-if="selectedNumbers.length>0" class="btn btn-xs btn-ghost" @click="toggleSortOrder">
-            <span class="size-3.5 mr-1" :class="sortOrder==='asc'?'icon-[tabler--arrow-up]':sortOrder==='desc'?'icon-[tabler--arrow-down]':'icon-[tabler--arrows-sort]'"></span>
-            {{ sortOrder === 'asc' ? '升序' : sortOrder === 'desc' ? '降序' : '排序' }}
-          </button>
         </div>
       </section>
 
       <!-- Custom Tabs -->
-      <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-        <div class="tabs tabs-boxed flex p-1 gap-0 w-full">
-          <button class="tab tab-sm flex-1" :class="activeTab==='number'?'tab-active':''" @click="activeTab='number'">数字选号</button>
-          <button class="tab tab-sm flex-1" :class="activeTab==='zodiac'?'tab-active':''" @click="activeTab='zodiac'">生肖选号</button>
-          <button class="tab tab-sm flex-1" :class="activeTab==='five'?'tab-active':''" @click="activeTab='five'">五行选号</button>
-          <button class="tab tab-sm flex-1" :class="activeTab==='condition'?'tab-active':''" @click="activeTab='condition'">条件选号</button>
+      <div class="u-section p-1.5 overflow-hidden">
+        <div class="grid grid-cols-4 gap-1">
+          <button
+            v-for="tab in tabs"
+            :key="tab.key"
+            class="flex flex-col items-center justify-center gap-1 py-2.5 px-1 rounded-lg text-xs transition-colors"
+            :class="activeTab === tab.key ? 'bg-primary text-white shadow-sm' : 'text-secondary hover:bg-base-200'"
+            @click="activeTab = tab.key"
+          >
+            <span :class="[tab.icon, 'size-4']"></span>
+            <span>{{ tab.label }}</span>
+          </button>
         </div>
       </div>
 
       <!-- Five Elements -->
-      <section v-if="activeTab==='five'" class="bg-white rounded-2xl p-3 border border-gray-200">
+      <section v-if="activeTab==='five'" class="u-section">
         <div class="flex flex-wrap gap-2">
           <button v-for="opt in elementOptions" :key="opt.key" type="button" class="u-chip" :class="selectedElement===opt.key?'is-active':''" @click="setElement(opt.key)">{{ opt.label }}</button>
         </div>
-        <p class="text-sm text-gray-700 mt-2">{{elementOptions.find(i=>i.key===selectedElement)?.label}}行号码</p>
+        <p class="text-sm text-base-content mt-2">{{elementOptions.find(i=>i.key===selectedElement)?.label}}行号码</p>
         <div class="flex flex-wrap gap-2 mt-2">
           <NumberButton v-for="n in idsByElement[selectedElement]" :key="`el-${selectedElement}-${n}`" :id="n" :active="selectedNumbers.includes(n)" :wave-color="recordById.get(n)?.wave.key" :five-elements="recordById.get(n)?.wuxing.label" :chinese-zodiac="recordById.get(n)?.zodiac.label" :odd-and-even="recordById.get(n)?.oddAndEven==='odd'?'单':'双'" :sum-odd-and-even="recordById.get(n)?.sumOddAndEven==='odd'?'合单':'合双'" @select="handleSelect" />
         </div>
-        <div class="mt-2"><button class="btn btn-sm btn-primary btn-outline" @click="selectAllCurrentElement">全部选中</button></div>
-        <div class="mt-3 text-xs text-gray-400 leading-relaxed">
+        <div class="mt-2"><button class="u-btn u-btn-primary" @click="selectAllCurrentElement"><span class="icon-[tabler--check] size-3.5"></span>全部选中</button></div>
+        <div class="mt-3 text-xs text-secondary leading-relaxed">
           <div v-for="opt in elementOptions" :key="opt.key">{{ opt.label }}：{{ idsByElement[opt.key].join(', ') }}</div>
         </div>
       </section>
 
       <!-- Zodiac Selection -->
-      <section v-else-if="activeTab==='zodiac'" class="bg-white rounded-2xl p-3 border border-gray-200">
+      <section v-else-if="activeTab==='zodiac'" class="u-section">
         <div class="flex items-center justify-between">
-          <h3 class="text-base font-semibold text-gray-800">生肖选号</h3>
+          <h3 class="text-base font-semibold text-neutral">生肖选号</h3>
           <div class="flex items-center gap-3">
-            <div class="flex items-center gap-1.5"><span class="text-xs text-gray-400">按生肖</span><input type="checkbox" class="toggle toggle-xs" :value="zodiacCardOrderMode==='number'" @change="zodiacCardOrderMode=zodiacCardOrderMode==='number'?'zodiac':'number'" /><span class="text-xs text-gray-400">按数字</span></div>
-            <button class="btn btn-xs btn-ghost" @click="clearZodiac">清空</button>
+            <div class="flex items-center gap-1.5"><span class="text-xs text-secondary">按生肖</span><input type="checkbox" class="toggle toggle-xs" :value="zodiacCardOrderMode==='number'" @change="zodiacCardOrderMode=zodiacCardOrderMode==='number'?'zodiac':'number'" /><span class="text-xs text-secondary">按数字</span></div>
+            <button class="u-btn u-btn-ghost u-btn-sm" @click="clearZodiac">清空</button>
           </div>
         </div>
         <div class="grid grid-cols-3 gap-3 mt-3">
           <div v-for="opt in zodiacCardList" :key="opt.key" class="relative flex flex-col items-center gap-2 p-2 rounded-xl border-2 transition-all cursor-pointer"
-            :class="isZodiacActive(opt.key)?'border-[#2f3137] bg-[#2f3137]/4 translate-y-[-2px]':'border-gray-200'"
+            :class="isZodiacActive(opt.key)?'border-primary bg-primary/5 translate-y-[-2px]':'border-base-300'"
             @click="toggleZodiac(opt.key)">
-            <div v-if="isZodiacActive(opt.key)" class="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-[#2f3137] text-white flex items-center justify-center text-[11px]">✓</div>
-            <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center border-2" :class="isZodiacActive(opt.key)?'border-[#2f3137]':'border-transparent'"><span class="text-xl">{{ opt.emoji }}</span></div>
-            <span class="text-sm text-gray-700">{{ opt.name }}</span>
+            <div v-if="isZodiacActive(opt.key)" class="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-[11px]">✓</div>
+            <div class="w-8 h-8 rounded-full bg-base-200 flex items-center justify-center border-2" :class="isZodiacActive(opt.key)?'border-primary':'border-transparent'"><span class="text-xl">{{ opt.emoji }}</span></div>
+            <span class="text-sm text-base-content">{{ opt.name }}</span>
             <div class="flex flex-wrap gap-1 justify-center">
-              <span v-for="n in numbersByZodiac[opt.key]" :key="n" class="min-w-[28px] h-6 px-1.5 rounded-full text-xs inline-flex items-center justify-center border cursor-pointer" :class="{ 'bg-[#2f3137] text-white border-[#2f3137]': selectedNumbers.includes(n), 'border-red-400 text-red-500': !selectedNumbers.includes(n) && recordById.get(n)?.wave.key==='red', 'border-green-400 text-green-600': !selectedNumbers.includes(n) && recordById.get(n)?.wave.key==='green', 'border-blue-400 text-blue-500': !selectedNumbers.includes(n) && recordById.get(n)?.wave.key==='blue', 'border-gray-200 text-gray-500': !selectedNumbers.includes(n) && !['red','green','blue'].includes(recordById.get(n)?.wave.key) }" @click.stop="handleSelect(n)">{{ pad2(n) }}</span>
+              <span v-for="n in numbersByZodiac[opt.key]" :key="n" class="min-w-[28px] h-6 px-1.5 rounded-full text-xs inline-flex items-center justify-center border cursor-pointer transition-colors" :class="{ 'bg-primary text-white border-primary': selectedNumbers.includes(n), 'bg-error/10 border-error/30 text-error': !selectedNumbers.includes(n) && recordById.get(n)?.wave.key==='red', 'bg-success/10 border-success/30 text-success': !selectedNumbers.includes(n) && recordById.get(n)?.wave.key==='green', 'bg-info/10 border-info/30 text-info': !selectedNumbers.includes(n) && recordById.get(n)?.wave.key==='blue', 'bg-base-100 border-base-300 text-secondary': !selectedNumbers.includes(n) && !['red','green','blue'].includes(recordById.get(n)?.wave.key) }" @click.stop="handleSelect(n)">{{ pad2(n) }}</span>
             </div>
           </div>
         </div>
       </section>
 
       <!-- Number Grid -->
-      <section v-else-if="activeTab==='number'" class="bg-white rounded-2xl p-3 border border-gray-200">
-        <div class="grid grid-cols-7 sm:grid-cols-7 xs:grid-cols-5 gap-2 justify-items-center">
+      <section v-else-if="activeTab==='number'" class="u-section">
+        <div class="grid grid-cols-7 gap-1.5 justify-items-center">
           <NumberButton v-for="number in filteredGridNumbers" :key="`num-${number.id}`" :id="Number(number.id)" :active="selectedNumbers.includes(Number(number.id))" :wave-color="number.wave.key" :five-elements="number.wuxing.label" :chinese-zodiac="number.zodiac.label" :odd-and-even="number.oddAndEven==='odd'?'单':'双'" :sum-odd-and-even="number.sumOddAndEven==='odd'?'合单':'合双'" @select="handleSelect" />
         </div>
+        <p class="flex items-center justify-center gap-1 mt-3 text-xs text-secondary">
+          <span class="icon-[tabler--info-circle] size-3.5"></span>
+          点击号码可选择，长按可排除
+        </p>
       </section>
 
       <!-- Condition Selection -->
-      <section v-else-if="activeTab==='condition'" class="bg-white rounded-2xl p-3 border border-gray-200">
+      <section v-else-if="activeTab==='condition'" class="u-section">
         <div class="flex items-center justify-between">
-          <h3 class="text-base font-semibold text-gray-800">条件选号</h3>
-          <button class="btn btn-xs btn-ghost" @click="clearAllConditions">清空条件</button>
+          <h3 class="text-base font-semibold text-neutral">条件选号</h3>
+          <button class="u-btn u-btn-ghost u-btn-sm" @click="clearAllConditions">清空条件</button>
         </div>
         <div v-for="group in conditionGroups" :key="group.label" class="mt-3">
-          <p class="text-xs text-gray-400 mb-2">{{ group.label }}</p>
+          <p class="text-xs text-secondary mb-2">{{ group.label }}</p>
           <div class="flex flex-wrap gap-2">
             <button v-for="opt in group.options" :key="opt" type="button" class="u-chip" :class="selectedConditionOptions.includes(opt)?'is-active':''" @click="toggleConditionOption(opt)">{{ opt }}</button>
           </div>
@@ -328,167 +351,229 @@ async function copyNumbers() { if (selectedNumbers.value.length === 0) { toast('
       </section>
 
       <!-- Filters -->
-      <section class="bg-white rounded-2xl p-3 border border-gray-200">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="text-sm font-semibold text-gray-500">过滤条件</h3>
-          <button class="btn btn-xs btn-ghost" @click="clearAllFilters">清空所有过滤</button>
+      <section class="u-section">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-semibold text-base-content flex items-center gap-1.5" @click="filtersExpanded = !filtersExpanded">
+            <span class="icon-[tabler--adjustments-horizontal] size-4 text-secondary"></span>
+            过滤条件
+            <span class="icon-[tabler--chevron-down] size-3.5 text-secondary transition-transform" :class="filtersExpanded ? 'rotate-180' : ''"></span>
+          </h3>
+          <button class="text-xs text-secondary hover:text-secondary transition-colors" @click="clearAllFilters">清空</button>
         </div>
 
-        <!-- 五行过滤 -->
-        <div class="mb-3"><p class="text-xs text-gray-400 mb-2">五行过滤</p>
-          <div class="flex flex-wrap gap-2">
-            <button v-for="opt in elementOptions" :key="`fe-${opt.key}`" class="u-chip" :class="selectedElementsFilter.includes(opt.key)?'is-active':''" @click="toggleElementFilter(opt.key)">{{ opt.label }}</button>
-            <button v-if="selectedElementsFilter.length" class="btn btn-xs btn-ghost" @click="selectedElementsFilter=[]">清空五行</button>
+        <div v-show="filtersExpanded" class="divide-y divide-base-200 mt-1">
+          <!-- 波色过滤 -->
+          <div class="flex items-start gap-3 py-3">
+            <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">波色</div>
+            <div class="flex flex-wrap gap-2 flex-1">
+              <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveColors.includes('red') ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveColor('red')">红波</button>
+              <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveColors.includes('green') ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveColor('green')">绿波</button>
+              <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveColors.includes('blue') ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveColor('blue')">蓝波</button>
+            </div>
           </div>
-        </div>
 
-        <!-- 波色过滤 -->
-        <div class="mb-3"><p class="text-xs text-gray-400 mb-2">波色过滤</p>
-          <div class="flex flex-wrap gap-2">
-            <button class="u-chip" :class="selectedWaveColors.includes('red')?'is-active':''" @click="toggleWaveColor('red')">红波</button>
-            <button class="u-chip" :class="selectedWaveColors.includes('green')?'is-active':''" @click="toggleWaveColor('green')">绿波</button>
-            <button class="u-chip" :class="selectedWaveColors.includes('blue')?'is-active':''" @click="toggleWaveColor('blue')">蓝波</button>
-            <button v-if="selectedWaveColors.length" class="btn btn-xs btn-ghost" @click="selectedWaveColors=[]">清空波色</button>
+          <!-- 单双过滤 -->
+          <div class="flex items-start gap-3 py-3">
+            <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">单双</div>
+            <div class="flex flex-wrap gap-2 flex-1">
+              <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="oddEvenFilter==='odd' ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="oddEvenFilter='odd'">单</button>
+              <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="oddEvenFilter==='even' ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="oddEvenFilter='even'">双</button>
+              <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="oddEvenFilter==='all' ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="oddEvenFilter='all'">全部</button>
+            </div>
           </div>
-        </div>
 
-        <!-- 十二生肖过滤 -->
-        <div class="mb-3"><p class="text-xs text-gray-400 mb-2">十二生肖过滤</p>
-          <div class="flex flex-wrap gap-2">
-            <button v-for="opt in zodiacOptions" :key="`zf-${opt.key}`" class="u-chip" :class="selectedZodiacsFilter.includes(opt.key)?'is-active':''" @click="toggleZodiacFilter(opt.key)">{{ opt.name }}</button>
-            <button v-if="selectedZodiacsFilter.length" class="btn btn-xs btn-ghost" @click="selectedZodiacsFilter=[]">清空生肖</button>
+          <!-- 五行过滤 -->
+          <div class="flex items-start gap-3 py-3">
+            <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">五行</div>
+            <div class="flex flex-wrap gap-2 flex-1">
+              <button v-for="opt in elementOptions" :key="`fe-${opt.key}`" class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedElementsFilter.includes(opt.key) ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleElementFilter(opt.key)">{{ opt.label }}</button>
+            </div>
           </div>
-        </div>
 
-        <!-- 门数过滤 -->
-        <div class="mb-3"><p class="text-xs text-gray-400 mb-2">门数过滤</p>
-          <div class="flex flex-wrap gap-2">
-            <button v-for="n in [1,2,3,4,5]" :key="`men-${n}`" class="u-chip" :class="selectedMenFilter.includes(`${n}门`)?'is-active':''" @click="toggleMenFilter(`${n}门`)">{{ n }}门</button>
-            <button v-if="selectedMenFilter.length" class="btn btn-xs btn-ghost" @click="selectedMenFilter=[]">清空门数</button>
+          <!-- 生肖过滤 -->
+          <div class="flex items-start gap-3 py-3">
+            <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">生肖</div>
+            <div class="flex flex-wrap gap-2 flex-1">
+              <button v-for="opt in zodiacFilterOptions" :key="`zf-${opt.key}`" class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedZodiacsFilter.includes(opt.key) ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleZodiacFilter(opt.key)">{{ opt.name }}</button>
+              <button class="px-2 py-1 text-xs text-primary flex items-center gap-0.5" @click="zodiacFilterExpanded = !zodiacFilterExpanded">
+                {{ zodiacFilterExpanded ? '收起' : '更多' }}
+                <span class="icon-[tabler--chevron-down] size-3 transition-transform" :class="zodiacFilterExpanded ? 'rotate-180' : ''"></span>
+              </button>
+            </div>
           </div>
-        </div>
 
-        <!-- 段数过滤 -->
-        <div class="mb-3"><p class="text-xs text-gray-400 mb-2">段数过滤</p>
-          <div class="flex flex-wrap gap-2">
-            <button v-for="n in [1,2,3,4,5,6,7]" :key="`duan-${n}`" class="u-chip" :class="selectedDuanFilter.includes(`${n}段`)?'is-active':''" @click="toggleDuanFilter(`${n}段`)">{{ n }}段</button>
-            <button v-if="selectedDuanFilter.length" class="btn btn-xs btn-ghost" @click="selectedDuanFilter=[]">清空段数</button>
+          <!-- 合数过滤 -->
+          <div class="flex items-start gap-3 py-3">
+            <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">合数</div>
+            <div class="flex flex-wrap gap-2 flex-1">
+              <button v-for="n in [1,2,3,4,5,6,7,8,9,10,11,12,13]" :key="`he-${n}`" class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedHeShuFilter.includes(`${n}合`) ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleHeShuFilter(`${n}合`)">{{ n }}合</button>
+            </div>
           </div>
-        </div>
 
-        <!-- 合数过滤 -->
-        <div class="mb-3"><p class="text-xs text-gray-400 mb-2">合数过滤</p>
-          <div class="flex flex-wrap gap-2">
-            <button v-for="n in [1,2,3,4,5,6,7,8,9,10,11,12,13]" :key="`he-${n}`" class="u-chip" :class="selectedHeShuFilter.includes(`${n}合`)?'is-active':''" @click="toggleHeShuFilter(`${n}合`)">{{ n }}合</button>
-            <button v-if="selectedHeShuFilter.length" class="btn btn-xs btn-ghost" @click="selectedHeShuFilter=[]">清空合数</button>
+          <!-- 更多筛选 -->
+          <div class="pt-3">
+            <button class="w-full flex items-center justify-center gap-1 py-2 text-xs text-primary border border-dashed border-base-300 rounded-lg" @click="moreFiltersExpanded = !moreFiltersExpanded">
+              {{ moreFiltersExpanded ? '收起更多筛选' : '展开更多筛选' }}
+              <span class="icon-[tabler--chevron-down] size-3.5 transition-transform" :class="moreFiltersExpanded ? 'rotate-180' : ''"></span>
+            </button>
           </div>
-        </div>
 
-        <!-- 单双过滤 -->
-        <div class="mb-3"><p class="text-xs text-gray-400 mb-2">单双过滤</p>
-          <div class="flex flex-wrap gap-2">
-            <button class="u-chip" :class="oddEvenFilter==='odd'?'is-active':''" @click="oddEvenFilter='odd'">单</button>
-            <button class="u-chip" :class="oddEvenFilter==='even'?'is-active':''" @click="oddEvenFilter='even'">双</button>
-            <button class="u-chip" :class="oddEvenFilter==='all'?'is-active':''" @click="oddEvenFilter='all'">全部</button>
-          </div>
-        </div>
+          <div v-show="moreFiltersExpanded" class="divide-y divide-base-200">
+            <!-- 合单双过滤 -->
+            <div class="flex items-start gap-3 py-3">
+              <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">合单双</div>
+              <div class="flex flex-wrap gap-2 flex-1">
+                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="sumOddEvenFilter==='oddSum' ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="sumOddEvenFilter='oddSum'">合单</button>
+                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="sumOddEvenFilter==='evenSum' ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="sumOddEvenFilter='evenSum'">合双</button>
+                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="sumOddEvenFilter==='all' ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="sumOddEvenFilter='all'">全部</button>
+              </div>
+            </div>
 
-        <!-- 合单双过滤 -->
-        <div class="mb-3"><p class="text-xs text-gray-400 mb-2">合单双过滤</p>
-          <div class="flex flex-wrap gap-2">
-            <button class="u-chip" :class="sumOddEvenFilter==='oddSum'?'is-active':''" @click="sumOddEvenFilter='oddSum'">合单</button>
-            <button class="u-chip" :class="sumOddEvenFilter==='evenSum'?'is-active':''" @click="sumOddEvenFilter='evenSum'">合双</button>
-            <button class="u-chip" :class="sumOddEvenFilter==='all'?'is-active':''" @click="sumOddEvenFilter='all'">全部</button>
-          </div>
-        </div>
+            <!-- 波色单双 -->
+            <div class="flex items-start gap-3 py-3">
+              <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">波色单双</div>
+              <div class="flex flex-wrap gap-2 flex-1">
+                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveOddEven.includes('red-odd') ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveOddEven('red-odd')">红单</button>
+                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveOddEven.includes('red-even') ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveOddEven('red-even')">红双</button>
+                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveOddEven.includes('green-odd') ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveOddEven('green-odd')">绿单</button>
+                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveOddEven.includes('green-even') ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveOddEven('green-even')">绿双</button>
+                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveOddEven.includes('blue-odd') ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveOddEven('blue-odd')">蓝单</button>
+                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveOddEven.includes('blue-even') ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveOddEven('blue-even')">蓝双</button>
+              </div>
+            </div>
 
-        <!-- 家/野肖 -->
-        <div class="mb-3"><p class="text-xs text-gray-400 mb-2">家/野肖过滤</p>
-          <div class="flex flex-wrap gap-2">
-            <button class="u-chip" :class="homeWildFilter==='home'?'is-active':''" @click="homeWildFilter='home'">家肖</button>
-            <button class="u-chip" :class="homeWildFilter==='wild'?'is-active':''" @click="homeWildFilter='wild'">野肖</button>
-            <button class="u-chip" :class="homeWildFilter==='all'?'is-active':''" @click="homeWildFilter='all'">全部</button>
-          </div>
-        </div>
+            <!-- 天地肖过滤 -->
+            <div class="flex items-start gap-3 py-3">
+              <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">天地肖</div>
+              <div class="flex flex-wrap gap-2 flex-1">
+                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="skyEarthFilter==='sky' ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="skyEarthFilter='sky'">天肖</button>
+                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="skyEarthFilter==='earth' ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="skyEarthFilter='earth'">地肖</button>
+                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="skyEarthFilter==='all' ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="skyEarthFilter='all'">全部</button>
+              </div>
+            </div>
 
-        <!-- 天/地肖 -->
-        <div class="mb-3"><p class="text-xs text-gray-400 mb-2">天/地肖过滤</p>
-          <div class="flex flex-wrap gap-2">
-            <button class="u-chip" :class="skyEarthFilter==='sky'?'is-active':''" @click="skyEarthFilter='sky'">天肖</button>
-            <button class="u-chip" :class="skyEarthFilter==='earth'?'is-active':''" @click="skyEarthFilter='earth'">地肖</button>
-            <button class="u-chip" :class="skyEarthFilter==='all'?'is-active':''" @click="skyEarthFilter='all'">全部</button>
-          </div>
-        </div>
+            <!-- 家/野肖过滤 -->
+            <div class="flex items-start gap-3 py-3">
+              <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">家野肖</div>
+              <div class="flex flex-wrap gap-2 flex-1">
+                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="homeWildFilter==='home' ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="homeWildFilter='home'">家肖</button>
+                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="homeWildFilter==='wild' ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="homeWildFilter='wild'">野肖</button>
+                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="homeWildFilter==='all' ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="homeWildFilter='all'">全部</button>
+              </div>
+            </div>
 
-        <!-- 波色单双 -->
-        <div class="mb-3"><p class="text-xs text-gray-400 mb-2">波色单双过滤</p>
-          <div class="flex flex-wrap gap-2">
-            <button class="u-chip" :class="selectedWaveOddEven.includes('red-odd')?'is-active':''" @click="toggleWaveOddEven('red-odd')">红单</button>
-            <button class="u-chip" :class="selectedWaveOddEven.includes('red-even')?'is-active':''" @click="toggleWaveOddEven('red-even')">红双</button>
-            <button class="u-chip" :class="selectedWaveOddEven.includes('green-odd')?'is-active':''" @click="toggleWaveOddEven('green-odd')">绿单</button>
-            <button class="u-chip" :class="selectedWaveOddEven.includes('green-even')?'is-active':''" @click="toggleWaveOddEven('green-even')">绿双</button>
-            <button class="u-chip" :class="selectedWaveOddEven.includes('blue-odd')?'is-active':''" @click="toggleWaveOddEven('blue-odd')">蓝单</button>
-            <button class="u-chip" :class="selectedWaveOddEven.includes('blue-even')?'is-active':''" @click="toggleWaveOddEven('blue-even')">蓝双</button>
-            <button v-if="selectedWaveOddEven.length" class="btn btn-xs btn-ghost" @click="selectedWaveOddEven=[]">清空</button>
-          </div>
-        </div>
+            <!-- 门数过滤 -->
+            <div class="flex items-start gap-3 py-3">
+              <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">门数</div>
+              <div class="flex flex-wrap gap-2 flex-1">
+                <button v-for="n in [1,2,3,4,5]" :key="`men-${n}`" class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedMenFilter.includes(`${n}门`) ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleMenFilter(`${n}门`)">{{ n }}门</button>
+              </div>
+            </div>
 
-        <!-- 头数过滤 -->
-        <div class="mb-3"><p class="text-xs text-gray-400 mb-2">头数过滤</p>
-          <div class="flex flex-wrap gap-2">
-            <button v-for="h in availableHeads" :key="`head-${h}`" class="u-chip" :class="selectedHeads.includes(h)?'is-active':''" @click="toggleHead(h)">{{ h }}</button>
-            <button v-if="availableHeads.length" class="btn btn-xs btn-ghost" @click="selectedHeads=[]">清空头数</button>
-          </div>
-        </div>
+            <!-- 段数过滤 -->
+            <div class="flex items-start gap-3 py-3">
+              <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">段数</div>
+              <div class="flex flex-wrap gap-2 flex-1">
+                <button v-for="n in [1,2,3,4,5,6,7]" :key="`duan-${n}`" class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedDuanFilter.includes(`${n}段`) ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleDuanFilter(`${n}段`)">{{ n }}段</button>
+              </div>
+            </div>
 
-        <!-- 位数过滤 -->
-        <div class="mb-3"><p class="text-xs text-gray-400 mb-2">位数过滤</p>
-          <div class="flex flex-wrap gap-2">
-            <button v-for="u in availableUnits" :key="`unit-${u}`" class="u-chip" :class="selectedUnits.includes(u)?'is-active':''" @click="toggleUnit(u)">{{ u }}</button>
-            <button v-if="availableUnits.length" class="btn btn-xs btn-ghost" @click="selectedUnits=[]">清空位数</button>
+            <!-- 头数过滤 -->
+            <div class="flex items-start gap-3 py-3">
+              <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">头数</div>
+              <div class="flex flex-wrap gap-2 flex-1">
+                <button v-for="h in availableHeads" :key="`head-${h}`" class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedHeads.includes(h) ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleHead(h)">{{ h }}头</button>
+              </div>
+            </div>
+
+            <!-- 位数过滤 -->
+            <div class="flex items-start gap-3 py-3">
+              <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">尾数</div>
+              <div class="flex flex-wrap gap-2 flex-1">
+                <button v-for="u in availableUnits" :key="`unit-${u}`" class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedUnits.includes(u) ? 'bg-primary text-white border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleUnit(u)">{{ u }}尾</button>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       <!-- Filter Results -->
-      <section class="bg-white rounded-2xl p-3 border border-gray-200" :class="{ 'fixed top-0 left-0 w-full z-50': resultsStickyEnabled }">
-        <div class="flex items-center justify-between">
-          <h3 class="text-sm text-gray-500">过滤结果（基于已选）<span class="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 ml-2 rounded-full border border-gray-200 bg-white text-xs text-gray-500">{{ filteredSelectedRecords.length }}</span></h3>
-          <div class="flex items-center gap-2">
-            <span class="text-xs text-gray-400">置顶</span>
-            <input type="checkbox" class="toggle toggle-sm" v-model="resultsStickySelected" />
-          </div>
+      <section class="u-section">
+        <div class="flex items-center justify-between cursor-pointer" @click="resultsExpanded = !resultsExpanded">
+          <h3 class="text-sm font-semibold text-base-content">
+            当前过滤结果 <span class="text-xs font-normal text-secondary">{{ filteredSelectedRecords.length }}注</span>
+          </h3>
+          <button class="text-xs text-secondary flex items-center gap-0.5">
+            {{ resultsExpanded ? '收起' : '展开' }}
+            <span class="icon-[tabler--chevron-down] size-3.5 transition-transform" :class="resultsExpanded ? 'rotate-180' : ''"></span>
+          </button>
         </div>
-        <div v-if="filteredSelectedRecords.length===0" class="text-sm text-gray-400 mt-3">暂无过滤结果</div>
-        <div v-else class="flex flex-wrap gap-2 mt-3">
-          <NumberButton v-for="rec in filteredSelectedRecords" :key="`sel-${rec.id}`" :id="Number(rec.id)" :active="selectedNumbers.includes(Number(rec.id))" :wave-color="rec.wave.key" :five-elements="rec.wuxing.label" :chinese-zodiac="rec.zodiac.label" :odd-and-even="rec.oddAndEven==='odd'?'单':'双'" :sum-odd-and-even="rec.sumOddAndEven==='odd'?'合单':'合双'" @select="handleSelect" />
+        <div v-if="resultsExpanded">
+          <div v-if="filteredSelectedRecords.length===0" class="text-sm text-secondary mt-3">暂无过滤结果</div>
+          <div v-else class="flex flex-wrap gap-2 mt-3">
+            <NumberButton v-for="rec in filteredSelectedRecords" :key="`sel-${rec.id}`" :id="Number(rec.id)" :active="selectedNumbers.includes(Number(rec.id))" :wave-color="rec.wave.key" :five-elements="rec.wuxing.label" :chinese-zodiac="rec.zodiac.label" :odd-and-even="rec.oddAndEven==='odd'?'单':'双'" :sum-odd-and-even="rec.sumOddAndEven==='odd'?'合单':'合双'" @select="handleSelect" />
+          </div>
         </div>
       </section>
 
       <!-- Save Bar -->
-      <div class="flex flex-col gap-2">
-        <button class="btn btn-primary w-full" @click="saveAndCopy">复制保存</button>
-        <button class="btn btn-error btn-outline w-full" @click="deleteSaved">删除本地记录</button>
+      <div class="flex flex-col gap-2 pt-1">
+        <button class="w-full h-11 rounded-xl bg-primary text-white text-sm font-semibold shadow-md shadow-accent active:scale-[0.98] transition-transform flex items-center justify-center gap-1.5" @click="saveAndCopy">
+          <span class="icon-[tabler--copy] size-4"></span>
+          复制保存
+        </button>
+        <button class="w-full h-10 text-sm text-red-500 hover:text-red-600 active:scale-[0.98] transition-transform" @click="deleteSaved">
+          删除本地记录
+        </button>
       </div>
 
-      <!-- Manual Input Popup (Drawer from bottom) -->
-      <div v-if="showManualInputDialog" class="overlay overlay-open:opacity-100" role="dialog" tabindex="-1" @click.self="closeManualInputDialog">
-        <div class="modal-dialog modal-bottom-end w-full max-w-full">
-          <div class="modal-content rounded-t-2xl">
-            <div class="modal-header">
-              <h3 class="modal-title">手动输入号码</h3>
-              <button type="button" class="btn btn-text btn-circle btn-sm absolute end-3 top-3" @click="closeManualInputDialog"><span class="icon-[tabler--x] size-4"></span></button>
+      <!-- Manual Input Drawer from bottom -->
+      <div v-if="showManualInputDialog" class="fixed inset-0 z-[100]">
+        <!-- 遮罩 -->
+        <div class="absolute inset-0 bg-black/40" />
+        <!-- Drawer 内容 -->
+        <div class="absolute inset-x-0 bottom-0 bg-base-100 rounded-t-2xl shadow-[0_-8px_30px_rgba(0,0,0,0.12)]" style="max-height: 85vh; overflow-y: auto;">
+          <div class="drawer-header relative flex items-center justify-center px-4 py-3.5 border-b border-base-200">
+            <h3 class="text-base font-semibold text-neutral">手动输入号码</h3>
+            <button type="button" class="btn btn-text btn-circle btn-sm absolute end-3 top-1/2 -translate-y-1/2" @click="closeManualInputDialog" aria-label="Close">
+              <span class="icon-[tabler--x] size-5"></span>
+            </button>
+          </div>
+          <div class="drawer-body px-4 py-4 space-y-3">
+            <div class="space-y-1.5">
+              <label class="text-xs text-secondary">号码</label>
+              <textarea
+                v-model="manualInputText"
+                class="w-full min-h-[100px] px-3 py-2 text-sm text-neutral bg-base-100 border border-base-300 rounded-lg outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/15 placeholder:text-secondary resize-none"
+                placeholder="请输入号码，多个号码用逗号、空格、换行或英文句号分隔，支持1-49的数字"
+                rows="6"
+              />
             </div>
-            <div class="modal-body space-y-3">
-              <textarea v-model="manualInputText" class="textarea textarea-bordered w-full min-h-[100px]" placeholder="请输入号码，多个号码用逗号、空格、换行或英文句号分隔，支持1-49的数字" rows="6"></textarea>
-              <div class="flex items-center gap-2 pt-3 border-t border-dashed border-gray-200">
-                <span class="text-xs text-gray-400 whitespace-nowrap">自定义分隔符：</span>
-                <input v-model="customDelimiter" type="text" class="input input-bordered input-sm flex-1" placeholder="请输入分隔符" maxlength="5" />
-              </div>
+            <div class="flex items-center gap-2 pt-2">
+              <span class="text-xs text-secondary whitespace-nowrap">自定义分隔符</span>
+              <input
+                v-model="customDelimiter"
+                type="text"
+                class="flex-1 h-9 px-3 text-sm text-neutral bg-base-100 border border-base-300 rounded-lg outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/15 placeholder:text-secondary"
+                placeholder="请输入分隔符"
+                maxlength="5"
+              />
             </div>
-            <div class="modal-footer">
-              <button class="btn btn-primary w-full" @click="handleManualInputConfirm">确认</button>
-            </div>
+          </div>
+          <div class="drawer-footer px-4 py-3 border-t border-base-200 flex items-center gap-2">
+            <button
+              class="u-btn u-btn-ghost flex-1 h-10"
+              @click="closeManualInputDialog"
+            >
+              取消
+            </button>
+            <button
+              class="u-btn u-btn-primary flex-1 h-10"
+              @click="handleManualInputConfirm"
+            >
+              <span class="icon-[tabler--check] size-4"></span>
+              确认
+            </button>
           </div>
         </div>
       </div>

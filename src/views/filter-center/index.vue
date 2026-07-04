@@ -39,23 +39,23 @@ function onRefresh() {
 </script>
 
 <template>
-  <div class="flex flex-col min-h-screen bg-[#f3f4f6]">
+  <div class="flex flex-col min-h-full" style="background-color: var(--page-bg)">
     <!-- Navbar -->
-    <div class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm flex items-center justify-between px-4 py-3">
-      <h1 class="text-base font-bold text-[#1f2937]">筛选中心</h1>
+    <div class="sticky top-0 z-50 bg-base-100 border-b border-base-300 shadow-sm flex items-center justify-between px-4 h-12">
+      <h1 class="text-base font-bold text-base-content">筛选中心</h1>
       <button type="button" class="btn btn-text btn-circle btn-sm" @click="onRefresh" aria-label="刷新">
         <span class="icon-[tabler--reload] size-4.5"></span>
       </button>
     </div>
 
     <!-- Custom Tabs -->
-    <div class="sticky top-[49px] z-40 bg-white border-b border-gray-200 px-2">
+    <div class="sticky top-12 z-40 bg-base-100 border-b border-base-300 px-2">
       <div class="flex">
         <button
           v-for="tab in tabs" :key="tab.name"
           type="button"
           class="flex-1 py-3 text-sm font-medium border-b-2 transition-colors"
-          :class="activeTab === tab.name ? 'border-[#2f3137] text-[#2f3137]' : 'border-transparent text-gray-500'"
+          :class="activeTab === tab.name ? 'border-primary text-primary' : 'border-transparent text-secondary'"
           @click="activeTab = tab.name"
         >{{ tab.label }}</button>
       </div>

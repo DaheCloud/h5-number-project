@@ -84,14 +84,14 @@ defineExpose({ refresh: () => { selectedConditions.value = []; selectedZodiacs.v
 </script>
 
 <template>
-  <div class="flex flex-col h-full pb-20">
+  <div class="flex flex-col min-h-full">
     <div class="p-3 space-y-3">
       <!-- Selected -->
-      <div class="bg-white rounded-2xl p-3 shadow-sm border border-gray-200">
-        <span class="text-sm text-gray-700">已选条件</span>
+      <div class="u-section">
+        <span class="text-sm text-base-content">已选条件</span>
         <div class="flex flex-wrap gap-2 mt-2">
-          <span v-for="item in selected" :key="item" class="inline-flex items-center justify-center min-w-[48px] min-h-9 px-2.5 rounded-full bg-[#2f3137] text-white font-semibold text-sm">{{ item }}</span>
-          <span v-if="selected.length===0" class="text-sm text-gray-400">暂无选择</span>
+          <span v-for="item in selected" :key="item" class="inline-flex items-center justify-center min-w-[48px] min-h-9 px-2.5 rounded-full bg-primary text-white font-semibold text-sm">{{ item }}</span>
+          <span v-if="selected.length===0" class="text-sm text-secondary">暂无选择</span>
         </div>
         <div class="flex gap-2 mt-3">
           <button class="btn btn-sm btn-outline btn-secondary" @click="copySelected">复制</button>
@@ -101,17 +101,17 @@ defineExpose({ refresh: () => { selectedConditions.value = []; selectedZodiacs.v
       </div>
 
       <!-- Condition Groups (custom accordion) -->
-      <div class="bg-white rounded-2xl p-3 border border-gray-200">
-        <h3 class="text-sm font-semibold text-gray-800 mb-3">条件选项分组</h3>
-        <div v-for="grp in groupedConditionOptions" :key="grp.key" class="mb-2 border border-gray-200 rounded-xl overflow-hidden">
-          <button type="button" class="w-full flex items-center justify-between px-4 py-3 bg-white font-semibold text-sm" @click="togglePanel(grp.key)">
+      <div class="u-section">
+        <h3 class="text-sm font-semibold text-base-content mb-3">条件选项分组</h3>
+        <div v-for="grp in groupedConditionOptions" :key="grp.key" class="mb-2 border border-base-300 rounded-xl overflow-hidden">
+          <button type="button" class="w-full flex items-center justify-between px-4 py-3 bg-base-100 font-semibold text-sm" @click="togglePanel(grp.key)">
             <span>{{ grp.title }}</span>
             <div class="flex items-center gap-2">
-              <span class="text-xs text-gray-400">{{ grp.items.length }}项</span>
+              <span class="text-xs text-secondary">{{ grp.items.length }}项</span>
               <span class="icon-[tabler--chevron-down] size-4 transition-transform" :class="activeConditionGroups.includes(grp.key)?'rotate-180':''"></span>
             </div>
           </button>
-          <div v-if="activeConditionGroups.includes(grp.key)" class="px-4 pb-3 pt-1 bg-white">
+          <div v-if="activeConditionGroups.includes(grp.key)" class="px-4 pb-3 pt-1 bg-base-100">
             <div class="grid grid-cols-3 gap-2">
               <button v-for="condition in grp.items" :key="condition" type="button"
                 class="u-chip" :class="selectedConditions.includes(condition)?'is-active':''" @click="toggle(condition)">{{ condition }}</button>
@@ -121,8 +121,8 @@ defineExpose({ refresh: () => { selectedConditions.value = []; selectedZodiacs.v
       </div>
 
       <!-- Zodiac extra -->
-      <div class="bg-white rounded-2xl p-3 border border-gray-200">
-        <h3 class="text-sm font-semibold text-gray-800 mb-3">额外生肖筛选（{{ selectedZodiacs.length }}）</h3>
+      <div class="u-section">
+        <h3 class="text-sm font-semibold text-base-content mb-3">额外生肖筛选（{{ selectedZodiacs.length }}）</h3>
         <div class="grid grid-cols-3 gap-2">
           <button v-for="zodiac in zodiacOptions" :key="zodiac" type="button"
             class="u-chip" :class="selectedZodiacs.includes(zodiac)?'is-active':''" @click="toggleZodiac(zodiac)">{{ zodiac }}</button>
@@ -130,37 +130,37 @@ defineExpose({ refresh: () => { selectedConditions.value = []; selectedZodiacs.v
       </div>
 
       <!-- Groups -->
-      <div class="bg-white rounded-2xl p-3 shadow-sm border border-gray-200">
+      <div class="u-section">
         <div class="flex items-center justify-between mb-4">
-          <h3 class="text-sm font-semibold text-gray-800">已添加的条件组</h3>
+          <h3 class="text-sm font-semibold text-base-content">已添加的条件组</h3>
           <button class="btn btn-xs btn-soft btn-error" @click="clearAllGroups">清空所有组</button>
         </div>
-        <div v-if="groups.length===0" class="text-sm text-gray-400">暂无分组</div>
+        <div v-if="groups.length===0" class="text-sm text-secondary">暂无分组</div>
         <div v-else class="space-y-3">
           <div v-for="(group, idx) in groups" :key="idx" class="space-y-2">
-            <div class="flex items-center justify-between"><span class="text-sm text-gray-500">第{{ idx+1 }}组</span>
+            <div class="flex items-center justify-between"><span class="text-sm text-secondary">第{{ idx+1 }}组</span>
               <button class="btn btn-xs btn-circle btn-ghost text-error" @click="deleteGroup(idx)"><span class="icon-[tabler--trash] size-3.5"></span></button>
             </div>
             <div class="space-y-1.5">
-              <div><span class="text-xs text-gray-400">条件组</span><div class="flex flex-wrap gap-2 mt-1"><span v-for="item in group.conditions" :key="item" class="inline-flex items-center justify-center min-w-[48px] min-h-9 px-2.5 rounded-full bg-[#2f3137] text-white font-semibold text-sm">{{ item }}</span><span v-if="!group.conditions.length" class="text-xs text-gray-400">无</span></div></div>
-              <div><span class="text-xs text-gray-400">额外生肖</span><div class="flex flex-wrap gap-2 mt-1"><span v-for="z in group.zodiacs" :key="z" class="inline-flex items-center justify-center min-w-[48px] min-h-9 px-2.5 rounded-full bg-[#f8fafc] border border-gray-200 text-sm">{{ z }}</span><span v-if="!group.zodiacs.length" class="text-xs text-gray-400">无</span></div></div>
+              <div><span class="text-xs text-secondary">条件组</span><div class="flex flex-wrap gap-2 mt-1"><span v-for="item in group.conditions" :key="item" class="inline-flex items-center justify-center min-w-[48px] min-h-9 px-2.5 rounded-full bg-primary text-white font-semibold text-sm">{{ item }}</span><span v-if="!group.conditions.length" class="text-xs text-secondary">无</span></div></div>
+              <div><span class="text-xs text-secondary">额外生肖</span><div class="flex flex-wrap gap-2 mt-1"><span v-for="z in group.zodiacs" :key="z" class="inline-flex items-center justify-center min-w-[48px] min-h-9 px-2.5 rounded-full bg-base-200 border border-base-300 text-sm">{{ z }}</span><span v-if="!group.zodiacs.length" class="text-xs text-secondary">无</span></div></div>
             </div>
-            <div><span class="text-xs text-gray-400">对应生肖（含重复）</span><div class="flex flex-wrap gap-2 mt-1">
-              <span v-for="z in getGroupZodiacStats(group)" :key="z.name" class="inline-flex items-center justify-center min-w-[48px] min-h-9 px-2 rounded-full text-sm font-semibold" :class="z.count>1?'bg-red-100 text-red-700':'bg-gray-100 text-[#2f3137]'">{{ z.name }}<template v-if="z.count>1">×{{ z.count }}</template></span>
+            <div><span class="text-xs text-secondary">对应生肖（含重复）</span><div class="flex flex-wrap gap-2 mt-1">
+              <span v-for="z in getGroupZodiacStats(group)" :key="z.name" class="inline-flex items-center justify-center min-w-[48px] min-h-9 px-2 rounded-full text-sm font-semibold" :class="z.count>1?'bg-error/10 text-error':'bg-base-200 text-primary'">{{ z.name }}<template v-if="z.count>1">×{{ z.count }}</template></span>
             </div></div>
           </div>
         </div>
       </div>
 
       <!-- Stats -->
-      <div class="bg-white rounded-2xl p-3 border border-gray-200">
-        <h3 class="text-sm font-semibold text-gray-800 mb-3">重复生肖统计</h3>
-        <div v-if="ranking.length===0" class="text-sm text-gray-400">暂无数据</div>
+      <div class="u-section">
+        <h3 class="text-sm font-semibold text-base-content mb-3">重复生肖统计</h3>
+        <div v-if="ranking.length===0" class="text-sm text-secondary">暂无数据</div>
         <div v-else class="space-y-2">
           <div v-for="item in ranking" :key="item.name" class="grid grid-cols-[60px_1fr_80px] items-center gap-2">
-            <span class="text-sm text-gray-700">{{ item.name }}</span>
-            <div class="h-2.5 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-[#2f3137] transition-all" :style="{width:Math.round(item.ratio*100)+'%'}"></div></div>
-            <span class="text-right text-xs text-gray-500">{{ (item.ratio*100).toFixed(1) }}%（{{ item.count }}）</span>
+            <span class="text-sm text-base-content">{{ item.name }}</span>
+            <div class="h-2.5 bg-base-200 rounded-full overflow-hidden"><div class="h-full bg-primary transition-all" :style="{width:Math.round(item.ratio*100)+'%'}"></div></div>
+            <span class="text-right text-xs text-secondary">{{ (item.ratio*100).toFixed(1) }}%（{{ item.count }}）</span>
           </div>
         </div>
       </div>

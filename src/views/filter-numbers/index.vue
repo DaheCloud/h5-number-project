@@ -41,29 +41,29 @@ function togglePanel(name: string) {
 </script>
 
 <template>
-  <div class="filter-page min-h-screen bg-[#f3f4f6]">
+  <div class="filter-page min-h-full" style="background-color: var(--page-bg)">
     <!-- Navbar -->
-    <div class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm flex items-center px-4 py-3">
+    <div class="sticky top-0 z-50 bg-base-100 border-b border-base-300 shadow-sm flex items-center px-4 h-12">
       <button class="btn btn-text btn-sm btn-circle mr-2" @click="onClickLeft"><span class="icon-[tabler--arrow-left] size-5"></span></button>
-      <h1 class="text-base font-bold text-[#1f2937] flex-1">筛选号码</h1>
+      <h1 class="text-base font-bold text-base-content flex-1">筛选号码</h1>
       <div class="relative">
         <button type="button" class="btn btn-text btn-sm btn-circle" @click="showMore=!showMore"><span class="icon-[tabler--dots] size-5"></span></button>
-        <div v-if="showMore" class="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 min-w-32 py-1" @click.stop>
-          <button v-for="action in moreActions" :key="action" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50" @click="onSelectMoreAction(action)">{{ action }}</button>
+        <div v-if="showMore" class="absolute right-0 top-full mt-1 bg-base-100 border border-base-300 rounded-xl shadow-lg z-50 min-w-32 py-1" @click.stop>
+          <button v-for="action in moreActions" :key="action" class="w-full text-left px-4 py-2 text-sm hover:bg-base-200" @click="onSelectMoreAction(action)">{{ action }}</button>
         </div>
       </div>
     </div>
 
-    <main class="px-3 pb-5 max-w-[760px] mx-auto">
+    <main class="px-3 max-w-[768px] mx-auto">
       <ResultStickyHeader :total-items="totalItems" :selected-count="selectedCount" :selected-filters="selectedFilters" :filtered-numbers="filteredNumbers" :get-wave-color="getWaveColorById" @clear="clearFilters" @remove-filter="toggleFilter" @toggle-exclusion="toggleExclusion" />
 
       <!-- Panels: custom accordion -->
       <div class="space-y-2.5">
-        <div v-for="panel in filterPanels" :key="panel.name" class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-          <button type="button" class="w-full flex items-center justify-between px-4 py-3.5 font-bold text-sm text-[#1f2937]" @click="togglePanel(panel.name)">
+        <div v-for="panel in filterPanels" :key="panel.name" class="u-section overflow-hidden">
+          <button type="button" class="w-full flex items-center justify-between px-4 py-3.5 font-bold text-sm text-base-content" @click="togglePanel(panel.name)">
             <span>{{ panel.title }}</span>
             <div class="flex items-center gap-2">
-              <span class="text-[11px] text-gray-400">{{ panel.subtitle }}</span>
+              <span class="text-[11px] text-secondary">{{ panel.subtitle }}</span>
               <span class="icon-[tabler--chevron-down] size-4 transition-transform" :class="activeNames.includes(panel.name)?'rotate-180':''"></span>
             </div>
           </button>

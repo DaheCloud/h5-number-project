@@ -1,47 +1,103 @@
 @import "tailwindcss";
 @plugin "flyonui";
+@plugin "@iconify/tailwind4";
 @import "flyonui/variants.css";
 @source "../node_modules/flyonui/flyonui.js";
 
-/* ——— 设计系统主题（FlyonUI + Tailwind v4 @theme） ——— */
+/* ——— FlyonUI 主题（唯一颜色体系） ———
+ * 柔和自然风（Soft Natural）：温暖深灰褐底 + 莫兰迪色系，低对比度，护眼舒适
+ *
+ * 语义类速查：
+ *   背景层级：bg-base-100（卡片暖深底）→ bg-base-200（次背景）→ 页面底色 #2D2A26
+ *   文字层级：text-base-content（奶油白正文）→ text-secondary（淡米色次要）
+ *   边框层级：border-base-300（常规）→ border-base-200（弱描边/分割线）
+ *   主色系列：bg-primary（莫兰迪蓝灰）/ text-primary / bg-primary/10（弱底）
+ *   波色系列：红波=error（复古柔红）/ 绿波=success（橄榄绿）/ 蓝波=info（灰蓝）
+ *   过滤器：bg-neutral（浅褐按钮）/ 选中态 bg-primary（莫兰迪蓝灰）
+ */
+@plugin "flyonui/theme" {
+  name: "light";
+  default: true;
+  /* 基础色系：温暖深灰褐底 → 次背景 → 边框 → 奶油白文字 */
+  --color-base-100: #38332e;          /* 卡片/容器暖深底 */
+  --color-base-200: #443e38;          /* 次背景/区块背景 */
+  --color-base-300: #5a534b;          /* 常规描边/分割线 */
+  --color-base-content: #eee5d8;      /* 正文文字（奶油白） */
+  /* 品牌色：莫兰迪蓝灰 */
+  --color-primary: #788a94;
+  --color-primary-content: #ffffff;
+  --color-accent: #788a94;
+  --color-accent-content: #ffffff;
+  /* 次要色：淡米色（导航栏未选中） */
+  --color-secondary: #d9d3c7;
+  --color-secondary-content: #2d2a26;
+  /* 中性色：浅褐色（过滤器按钮底） */
+  --color-neutral: #a99f92;
+  --color-neutral-content: #2d2a26;
+  /* 语义色（波色复用：柔和自然色系） */
+  --color-success: #8a947a;           /* 绿波：橄榄绿 */
+  --color-success-content: #ffffff;
+  --color-info: #708899;              /* 蓝波：灰蓝 */
+  --color-info-content: #ffffff;
+  --color-warning: #c8a86a;
+  --color-warning-content: #ffffff;
+  --color-error: #c88a81;             /* 红波：复古柔红 */
+  --color-error-content: #ffffff;
+  /* 圆角 */
+  --radius-selector: 1rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.75rem;
+}
+
+/* ——— 非颜色设计令牌（Tailwind v4 @theme） ———
+ * 仅定义圆角、控件高度、阴影、间距、字号等非颜色令牌。
+ * 所有颜色统一使用上方 FlyonUI 主题变量。
+ */
 @theme {
-  /* 色板 */
-  --color-primary: #2f3137;
-  --color-success: #52c41a;
-  --color-warning: #faad14;
-  --color-danger: #ff4d4f;
-  --color-red: #ff4d4f;
-  --color-green: #52c41a;
-  --color-blue: #1890ff;
-
-  --color-bg: #f3f4f6;
-  --color-surface: #ffffff;
-  --color-surface-alt: #f8fafc;
-  --color-border: #e5e7eb;
-  --color-text: #1f2937;
-  --color-text-muted: #6b7280;
-
-  --radius-sm: 10px;
-  --radius-md: 14px;
-  --radius-lg: 18px;
+  /* —— 圆角 —— */
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-2xl: 20px;
   --radius-full: 999px;
 
+  /* —— 控件高度 —— */
   --control-h-sm: 30px;
   --control-h-md: 32px;
   --control-h-lg: 40px;
+  --control-h-xl: 44px;
 
-  --shadow-soft: 0 4px 10px rgba(15, 23, 42, 0.06);
-  --shadow-card: 0 8px 16px rgba(15, 23, 42, 0.08);
-  --shadow-hover: 0 12px 24px rgba(15, 23, 42, 0.12);
+  /* —— 阴影 —— */
+  --shadow-soft: 0 2px 8px rgba(15, 23, 42, 0.05);
+  --shadow-card: 0 6px 14px rgba(15, 23, 42, 0.06);
+  --shadow-hover: 0 10px 22px rgba(15, 23, 42, 0.1);
+  --shadow-button: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-drawer: 0 -8px 30px rgba(0, 0, 0, 0.12);
 
+  /* —— 间距 —— */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
   --space-5: 24px;
+
+  /* —— 字号 —— */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
 }
 
-/* 全局排版（配合 Tailwind preflight，仅设置浏览器默认值无法覆盖的属性） */
+/* ——— 页面底色（通过 --page-bg 变量动态切换） ———
+ * 由 stores/theme.ts 在运行时设置，默认值为柔和自然风。
+ */
+@layer base {
+  html, body {
+    background-color: var(--page-bg, #2d2a26);
+  }
+}
+
+/* 全局排版 */
 html {
   box-sizing: border-box;
 }
@@ -52,8 +108,7 @@ html {
 html, body {
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
   color-scheme: light;
-  color: #111827;
-  background-color: var(--color-bg);
+  color: var(--color-base-content);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -67,20 +122,44 @@ html, body {
 .u-chip {
   padding: 6px 12px;
   border-radius: var(--radius-full);
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  color: var(--color-text);
+  border: 1px solid var(--color-base-300);
+  background: var(--color-base-100);
+  color: var(--color-base-content);
   font-size: 13px;
   transition: transform .12s ease, box-shadow .12s ease, background-color .12s ease, border-color .12s ease;
 }
-.u-chip:hover { box-shadow: var(--shadow-soft); transform: translateY(-1px); }
-.u-chip:active { transform: translateY(-2px); }
-.u-chip.is-active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+.u-chip:hover { box-shadow: var(--shadow-button); transform: translateY(-1px); }
+.u-chip:active { transform: translateY(0); }
+.u-chip.is-active { background: var(--color-primary); color: var(--color-primary-content); border-color: var(--color-primary); box-shadow: var(--shadow-button); }
 .u-chip.is-disabled { opacity: .5; pointer-events: none; }
+
+/* 统一操作按钮 */
+.u-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: var(--control-h-md);
+  padding: 0 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  background: var(--color-base-100);
+  color: var(--color-base-content);
+  box-shadow: var(--shadow-button);
+  transition: transform .12s ease, background-color .12s ease, border-color .12s ease, color .12s ease;
+}
+.u-btn:hover { transform: translateY(-1px); }
+.u-btn:active { transform: translateY(0); }
+.u-btn-primary { background: var(--color-primary); color: var(--color-primary-content); }
+.u-btn-danger { background: var(--color-base-100); color: var(--color-error); border-color: var(--color-base-300); }
+.u-btn-ghost { background: var(--color-base-100); border-color: var(--color-base-300); }
+.u-btn-sm { height: var(--control-h-sm); padding: 0 10px; font-size: 12px; }
 
 /* 卡片 */
 .u-card {
-  background: var(--color-surface);
+  background: var(--color-base-100);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-card);
   overflow: hidden;
@@ -92,4 +171,205 @@ html, body {
 @keyframes toast-in {
   from { opacity: 0; transform: translateY(-12px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* ——— 布局与组件工具类 ——— */
+
+/* 页面内容容器：在桌面端呈现为居中手机画幅 */
+.page-container {
+  width: 100%;
+  max-width: 768px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* 通用内容卡片：白底、圆角、细阴影、统一内边距 */
+.u-section {
+  background: var(--color-base-100);
+  border: 1px solid var(--color-base-300);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: 0.625rem;
+}
+
+.u-section-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-base-content);
+  margin-bottom: 0.5rem;
+}
+
+.u-section-subtitle {
+  font-size: 0.75rem;
+  color: var(--color-secondary);
+}
+
+/* 数字等宽：让号码列在表格、网格中始终对齐 */
+.u-tabular {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* 隐藏滚动条 */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { scrollbar-width: none; }
+
+/* ——— 基于主题色的语义工具类（供页面复用） ——— */
+
+/* 圆角筛选 chip：默认白底、选中变翠绿 */
+.theme-chip {
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  border: 1px solid var(--color-base-300);
+  background: var(--color-base-100);
+  color: var(--color-secondary);
+  transition: background-color .12s ease, border-color .12s ease, color .12s ease, transform .12s ease, box-shadow .12s ease;
+}
+.theme-chip:hover { border-color: var(--color-base-300); }
+.theme-chip.is-active {
+  background: var(--color-primary);
+  color: var(--color-primary-content);
+  border-color: var(--color-primary);
+}
+
+/* 主按钮 */
+.u-btn-primary { background: var(--color-primary); color: var(--color-primary-content); border-color: var(--color-primary); }
+.u-btn-primary:hover { background: color-mix(in srgb, var(--color-primary) 85%, #000); border-color: color-mix(in srgb, var(--color-primary) 85%, #000); }
+
+/* 表单输入 */
+.theme-input {
+  height: 36px;
+  padding: 0 12px;
+  font-size: var(--text-sm);
+  color: var(--color-base-content);
+  background: var(--color-base-100);
+  border: 1px solid var(--color-base-300);
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: border-color .12s ease, box-shadow .12s ease;
+}
+.theme-input::placeholder { color: var(--color-secondary); }
+.theme-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent);
+}
+
+.theme-textarea {
+  padding: 8px 12px;
+  font-size: var(--text-sm);
+  color: var(--color-base-content);
+  background: var(--color-base-100);
+  border: 1px solid var(--color-base-300);
+  border-radius: var(--radius-sm);
+  outline: none;
+  resize: none;
+  transition: border-color .12s ease, box-shadow .12s ease;
+}
+.theme-textarea::placeholder { color: var(--color-secondary); }
+.theme-textarea:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent);
+}
+
+/* 底部抽屉（drawer） */
+.drawer-bottom-sheet {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 100;
+  background: var(--color-base-100);
+  border-top-left-radius: var(--radius-2xl);
+  border-top-right-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-drawer);
+  max-height: 85vh;
+  overflow-y: auto;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.drawer-bottom-sheet__header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--color-base-200);
+  font-weight: 600;
+  font-size: var(--text-base);
+  color: var(--color-base-content);
+}
+.drawer-bottom-sheet__body { padding: 16px; }
+.drawer-bottom-sheet__footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--color-base-200);
+}
+
+/* ——— FlyonUI 组件覆盖（强制跟随主题变量） ——— */
+
+/* 主按钮 */
+.btn.btn-primary,
+.btn.btn-soft.btn-primary {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-primary-content);
+}
+.btn.btn-primary:hover,
+.btn.btn-soft.btn-primary:hover {
+  background-color: color-mix(in srgb, var(--color-primary) 85%, #000);
+  border-color: color-mix(in srgb, var(--color-primary) 85%, #000);
+}
+
+/* 幽灵/次要按钮 */
+.btn.btn-ghost,
+.btn.btn-secondary {
+  background-color: transparent;
+  color: var(--color-base-content);
+  border-color: var(--color-base-300);
+}
+.btn.btn-ghost:hover,
+.btn.btn-secondary:hover {
+  background-color: var(--color-base-200);
+  border-color: var(--color-base-300);
+}
+
+/* outline 主按钮 */
+.btn.btn-outline.btn-primary {
+  background-color: transparent;
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.btn.btn-outline.btn-primary:hover {
+  background-color: color-mix(in srgb, var(--color-primary) 15%, transparent);
+}
+
+/* 错误按钮 */
+.btn.btn-error,
+.btn.btn-soft.btn-error {
+  background-color: color-mix(in srgb, var(--color-error) 15%, transparent);
+  color: var(--color-error);
+  border-color: color-mix(in srgb, var(--color-error) 30%, transparent);
+}
+.btn.btn-error:hover,
+.btn.btn-soft.btn-error:hover {
+  background-color: color-mix(in srgb, var(--color-error) 30%, transparent);
+}
+
+/* tab 选中态 */
+.tab.tab-active {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.tabs.tabs-boxed .tab.tab-active {
+  background-color: var(--color-primary);
+  color: var(--color-primary-content);
+  border-color: var(--color-primary);
+}
+
+/* toggle 选中态 */
+.toggle.toggle-primary:checked,
+.toggle.toggle-primary[aria-checked="true"] {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
 }

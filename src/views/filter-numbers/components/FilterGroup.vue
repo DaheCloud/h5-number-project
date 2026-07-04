@@ -46,9 +46,9 @@ defineEmits<{
   padding: 3px 8px;
   font-size: 11px;
   letter-spacing: 0.03em;
-  color: #6b7280;
+  color: var(--color-secondary);
   font-weight: 600;
-  background: #f3f4f6;
+  background: var(--color-base-100);
 }
 
 .chip-grid {
@@ -60,14 +60,14 @@ defineEmits<{
 .chip {
   min-height: 38px;
   padding: 6px 8px;
-  background: #f8fafc;
+  background: var(--color-base-200);
   border-radius: 12px;
   font-size: 12px;
-  color: #374151;
+  color: var(--color-base-content);
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
   user-select: none;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-base-300);
   text-align: center;
   display: flex;
   align-items: center;
@@ -79,21 +79,25 @@ defineEmits<{
 }
 
 .chip--active {
-  background: #2f3137;
-  color: #f8fafc;
-  border-color: #2f3137;
+  background: var(--color-primary);
+  color: var(--color-primary-content);
+  border-color: var(--color-primary);
   font-weight: 600;
-  box-shadow: 0 6px 12px rgba(17, 24, 39, 0.24);
+  box-shadow: 0 6px 12px rgba(120, 138, 148, 0.24);
 }
 
-.chip--red-text { color: #ff4d4f; }
-.chip--green-text { color: #52c41a; }
-.chip--blue-text { color: #1890ff; }
+.chip--red-text { color: var(--color-error); }
+.chip--green-text { color: var(--color-success); }
+.chip--blue-text { color: var(--color-info); }
 
-
-.chip--active.chip--red-text { color: #b91c1c; border-color: #fca5a5; background: #fee2e2; }
-.chip--active.chip--green-text { color: #166534; border-color: #86efac; background: #dcfce7; }
-.chip--active.chip--blue-text { color: #1d4ed8; border-color: #93c5fd; background: #dbeafe; }
+/* 选中态下波色文字保持白色，统一主题色背景 */
+.chip--active.chip--red-text,
+.chip--active.chip--green-text,
+.chip--active.chip--blue-text {
+  color: var(--color-primary-content);
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+}
 
 .chip--active::before {
   content: "✓";

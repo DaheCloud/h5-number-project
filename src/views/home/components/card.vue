@@ -27,8 +27,8 @@
   position: relative;
   border-radius: var(--radius-md);
   overflow: hidden;
-  border: 1px solid var(--color-border);
-  background: #ffffff;
+  border: 1px solid var(--color-base-300);
+  background: var(--color-base-100);
   box-shadow: var(--shadow-card);
   animation: cardIn 540ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
   animation-delay: var(--card-delay);
@@ -47,13 +47,13 @@
   padding: 3px 10px;
   font-size: 11px;
   letter-spacing: 0.08em;
-  color: #4b5563;
-  background: #f3f4f6;
+  color: var(--color-secondary);
+  background: var(--color-base-200);
 }
 
 .card-title {
   margin: 0;
-  color: #111827;
+  color: var(--color-neutral);
   line-height: 1.34;
   font-size: 18px;
   font-weight: 700;
@@ -61,14 +61,14 @@
 
 .card-description {
   margin: 10px 0 0;
-  color: #4b5563;
+  color: var(--color-secondary);
   line-height: 1.58;
   font-size: 13px;
 }
 
 .card-hint {
   margin: 10px 0 0;
-  color: #9ca3af;
+  color: var(--color-secondary);
   line-height: 1.5;
   font-size: 12px;
 }
@@ -76,12 +76,12 @@
 .card-action {
   display: inline-flex;
   margin-top: 16px;
-  color: #111827;
+  color: var(--color-neutral);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.03em;
-  background: #f3f4f6;
-  border: 1px solid var(--color-border);
+  background: var(--color-base-200);
+  border: 1px solid var(--color-base-300);
   border-radius: 999px;
   padding: 5px 10px;
 }
@@ -93,7 +93,7 @@
   width: 62px;
   height: 62px;
   border-radius: 50%;
-  background: rgba(17, 24, 39, 0.08);
+  background: color-mix(in srgb, var(--color-neutral) 8%, transparent);
   transition: transform 260ms ease;
 }
 
@@ -103,7 +103,7 @@
 
 .card:hover {
   box-shadow: var(--shadow-hover);
-  border-color: #d1d5db;
+  border-color: var(--color-base-300);
 }
 
 .card:hover .card-corner {

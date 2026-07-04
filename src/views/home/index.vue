@@ -11,25 +11,25 @@ const list: ListItem[] = [
 </script>
 
 <template>
-  <section class="min-h-full px-3 pt-2 pb-5 bg-[#f3f4f6] md:px-4.5 lg:max-w-[1040px] lg:mx-auto">
+  <section class="min-h-full px-3 pt-2 pb-5" style="background-color: var(--page-bg)">
     <!-- Navbar -->
-    <div class="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm rounded-b-xl px-4 py-3 mb-4">
-      <h1 class="text-base font-bold text-[#1f2937] text-center">选号工具箱</h1>
+    <div class="sticky top-0 z-50 bg-base-100 border-b border-base-300 shadow-sm rounded-b-xl px-4 h-12 flex items-center justify-center mb-4">
+      <h1 class="text-base font-bold text-base-content">选号工具箱</h1>
     </div>
 
     <!-- Hero -->
-    <div class="bg-white border border-gray-200 rounded-2xl p-4 mb-4 shadow-sm md:p-5">
-      <p class="text-[11px] font-bold tracking-widest text-gray-400">HOME</p>
-      <h1 class="mt-2 text-[22px] font-bold text-[#1f2937] leading-tight md:text-[26px]">从首页直接进入常用筛选流程</h1>
-      <p class="mt-2 text-[13px] text-gray-500 leading-relaxed">每个入口只保留必要说明，减少切换成本，适合移动端快速操作。</p>
+    <div class="bg-base-100 border border-base-300 rounded-2xl p-4 mb-4 shadow-sm md:p-5">
+      <p class="text-[11px] font-bold tracking-widest text-secondary">HOME</p>
+      <h1 class="mt-2 text-[22px] font-bold text-base-content leading-tight md:text-[26px]">从首页直接进入常用筛选流程</h1>
+      <p class="mt-2 text-[13px] text-secondary leading-relaxed">每个入口只保留必要说明，减少切换成本，适合移动端快速操作。</p>
       <div class="mt-3 grid grid-cols-[90px_1fr] gap-2">
-        <div class="bg-[#f8fafc] border border-gray-200 rounded-xl p-2">
-          <p class="text-[11px] text-gray-400">工具数量</p>
-          <p class="text-lg font-bold text-[#111827]">{{ list.length }}</p>
+        <div class="bg-base-200 border border-base-300 rounded-xl p-2">
+          <p class="text-[11px] text-secondary">工具数量</p>
+          <p class="text-lg font-bold text-neutral">{{ list.length }}</p>
         </div>
-        <div class="bg-[#f8fafc] border border-gray-200 rounded-xl p-2">
-          <p class="text-[11px] text-gray-400">推荐路径</p>
-          <p class="text-xs text-[#374151]">选号 → 筛选中心 → 筛选号码</p>
+        <div class="bg-base-200 border border-base-300 rounded-xl p-2">
+          <p class="text-[11px] text-secondary">推荐路径</p>
+          <p class="text-xs text-base-content">选号 → 筛选中心 → 筛选号码</p>
         </div>
       </div>
     </div>
