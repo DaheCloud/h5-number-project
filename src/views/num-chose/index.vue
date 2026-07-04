@@ -51,7 +51,6 @@ const selectedElement = ref<WuxingKey>('metal')
 const stickySelected = ref<boolean>(false)
 const stickyEnabled = computed(() => stickySelected.value)
 const resultsStickySelected = ref<boolean>(false)
-const resultsStickyEnabled = computed(() => resultsStickySelected.value)
 
 const idsByElement = computed(() => {
   const acc = {} as Record<WuxingKey, number[]>
@@ -92,7 +91,6 @@ const zodiacOptionsSorted = computed(() => {
 
 const zodiacCardOrderMode = ref<'zodiac' | 'number'>('number')
 const zodiacCardList = computed(() => zodiacCardOrderMode.value === 'number' ? zodiacOptionsSorted.value : zodiacOptions)
-const zodiacOrderSwitch = computed({ get() { return zodiacCardOrderMode.value === 'number' }, set(v: boolean) { zodiacCardOrderMode.value = v ? 'number' : 'zodiac' } })
 
 // 条件过滤配置
 const conditionGroups: { label: string; options: string[] }[] = [
@@ -138,7 +136,6 @@ function toggleZodiac(key: ZodiacKey) {
 function clearZodiac() { const remove = new Set<number>(); for (const k of selectedZodiacs.value) for (const n of numbersByZodiac.value[k]) remove.add(n); selectedZodiacs.value = []; selectedNumbers.value = selectedNumbers.value.filter(n => !remove.has(n)) }
 
 function pad2(n: number) { return String(n).padStart(2, '0') }
-function colorClassById(id: number) { const w = recordById.value.get(id)?.wave.key; return w === 'red' ? 'z-num--red' : w === 'green' ? 'z-num--green' : w === 'blue' ? 'z-num--blue' : '' }
 function isZodiacActive(key: ZodiacKey) { return numbersByZodiac.value[key].some(n => selectedNumbers.value.includes(n)) }
 function selectAllCurrentElement() { const set = new Set(selectedNumbers.value); for (const n of idsByElement.value[selectedElement.value]) set.add(n); selectedNumbers.value = Array.from(set).sort((a, b) => a - b) }
 
@@ -222,8 +219,6 @@ function getSortedNumbers() { const sorted = [...selectedNumbers.value]; sortOrd
 function handleSelect(id: number) { if (typeof id !== 'number' || id < 1 || id > 49) return; const index = selectedNumbers.value.indexOf(id); index > -1 ? selectedNumbers.value.splice(index, 1) : selectedNumbers.value.push(id) }
 function getWaveColorById(id: number): string { return recordById.value.get(id)?.wave.key || '' }
 function clearSelectedNumbers() { selectedNumbers.value = []; sortOrder.value = 'none'; selectedConditionOptions.value = [] }
-function toggleSortOrder() { if (sortOrder.value === 'none' || sortOrder.value === 'desc') sortOrder.value = 'asc'; else sortOrder.value = 'desc' }
-async function copyNumbers() { if (selectedNumbers.value.length === 0) { toast('没有选中的号码可复制'); return }; try { const sortedNumbers = getSortedNumbers(); await navigator.clipboard.writeText(sortedNumbers.join('.')); toast('复制成功') } catch {} }
 </script>
 
 <template>

@@ -125,7 +125,7 @@ export function matchesFilter(numObj: LotteryNumber, filter: string): boolean {
 
   // 波色单双
   const waveOE = filter.match(/^(红|绿|蓝)(单|双)$/)
-  if (waveOE) {
+  if (waveOE && waveOE[1] && waveOE[2]) {
     return numObj.wave.key === ZH_TO_WAVE[waveOE[1]]
       && numObj.oddAndEven === (waveOE[2] === '单' ? 'odd' : 'even')
   }
@@ -157,7 +157,7 @@ export function matchesFilter(numObj: LotteryNumber, filter: string): boolean {
 
   // 合数
   const hs = filter.match(/^(\d{1,2})合$/)
-  if (hs) {
+  if (hs && hs[1]) {
     const num = hs[1].padStart(2, '0')
     return numObj.heShu === `合${num}`
   }
@@ -195,7 +195,7 @@ export function getFilterIds(option: string): number[] {
 
   // 合数
   const heShuMatch = option.match(/^(\d{1,2})合$/)
-  if (heShuMatch) {
+  if (heShuMatch && heShuMatch[1]) {
     const key = '合' + heShuMatch[1].padStart(2, '0')
     return numbers.filter(n => n.heShu === key).map(n => n.id)
   }
@@ -214,7 +214,7 @@ export function getFilterIds(option: string): number[] {
 
   // 波色单双
   const waveOddEven = option.match(/^(红|绿|蓝)(单|双)$/)
-  if (waveOddEven) {
+  if (waveOddEven && waveOddEven[1] && waveOddEven[2]) {
     const wave = ZH_TO_WAVE[waveOddEven[1]]
     const oe = waveOddEven[2] === '单' ? 'odd' : 'even'
     return numbers.filter(n => n.wave.key === wave && n.oddAndEven === oe).map(n => n.id)
@@ -237,7 +237,7 @@ export function getFilterIds(option: string): number[] {
 
   // 其它属性（支持 UI 标签和 JSON key 两种传入方式）
   if (option in OTHER_ATTR_MAP) {
-    return getOtherAttrIds(OTHER_ATTR_MAP[option])
+    return getOtherAttrIds(OTHER_ATTR_MAP[option]!)
   }
   // 也支持直接传入 JSON key（如 '家禽'、'野兽'）
   const directResult = getOtherAttrIds(option)
@@ -260,7 +260,7 @@ export function getOtherAttrIds(jsonKey: string): number[] {
   if (!zodiacs.length) return []
   const targetKeys = new Set<ZodiacKey>()
   zodiacs.forEach(z => {
-    if (z in ZH_TO_ZODIAC) targetKeys.add(ZH_TO_ZODIAC[z])
+    if (z in ZH_TO_ZODIAC) targetKeys.add(ZH_TO_ZODIAC[z]!)
   })
   const numbers = getAllNumbers()
   return numbers

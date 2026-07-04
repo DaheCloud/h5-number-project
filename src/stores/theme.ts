@@ -1,15 +1,17 @@
 import { defineStore } from 'pinia'
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 import { themePresets, type ThemePreset } from '@/config/themes'
 
 const STORAGE_KEY = 'app-theme'
 
+const DEFAULT_PRESET = themePresets[0] as ThemePreset
+
 export const useThemeStore = defineStore('theme', () => {
   /** 当前主题 ID */
-  const currentThemeId = ref<string>(themePresets[0].id)
+  const currentThemeId = ref<string>(DEFAULT_PRESET.id)
 
   /** 当前主题预设 */
-  const currentTheme = ref<ThemePreset>(themePresets[0])
+  const currentTheme = ref<ThemePreset>(DEFAULT_PRESET)
 
   /** 所有可用预设 */
   const presets = themePresets
@@ -44,7 +46,7 @@ export const useThemeStore = defineStore('theme', () => {
     if (saved) {
       setTheme(saved)
     } else {
-      applyTheme(themePresets[0])
+      applyTheme(DEFAULT_PRESET)
     }
   }
 
