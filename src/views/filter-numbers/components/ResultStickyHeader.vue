@@ -78,7 +78,7 @@ const copyResults = async () => {
         <button class="mini-btn mini-btn--info" @click="openDetail" title="按生肖查看详情">
           <span class="icon-[tabler--layout-grid] size-3.5"></span>
         </button>
-        <button class="mini-btn mini-btn--danger" @click="emit('clear')" title="清空">
+        <button class="mini-btn mini-btn--danger ml-2" @click="emit('clear')" title="清空">
           <span class="icon-[tabler--trash] size-3.5"></span>
         </button>
       </div>
@@ -234,7 +234,7 @@ const copyResults = async () => {
 .result-bar__actions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 12px;
 }
 
 .mini-btn {

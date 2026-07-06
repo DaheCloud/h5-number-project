@@ -537,7 +537,7 @@ function clearSelectedNumbers() { selectedNumbers.value = []; sortOrder.value = 
               <label class="text-xs text-secondary">号码</label>
               <textarea
                 v-model="manualInputText"
-                class="w-full min-h-[100px] px-3 py-2 text-sm text-neutral bg-base-100 border border-base-300 rounded-lg outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/15 placeholder:text-secondary resize-none"
+                class="w-full min-h-[100px] px-3 py-2 text-sm text-base-content bg-base-100 border border-base-300 rounded-lg outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/15 placeholder:text-secondary resize-none"
                 placeholder="请输入号码，多个号码用逗号、空格、换行或英文句号分隔，支持1-49的数字"
                 rows="6"
               />
@@ -547,7 +547,7 @@ function clearSelectedNumbers() { selectedNumbers.value = []; sortOrder.value = 
               <input
                 v-model="customDelimiter"
                 type="text"
-                class="flex-1 h-9 px-3 text-sm text-neutral bg-base-100 border border-base-300 rounded-lg outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/15 placeholder:text-secondary"
+                class="flex-1 h-9 px-3 text-sm text-base-content bg-base-100 border border-base-300 rounded-lg outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/15 placeholder:text-secondary"
                 placeholder="请输入分隔符"
                 maxlength="5"
               />
