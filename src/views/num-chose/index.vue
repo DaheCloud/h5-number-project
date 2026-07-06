@@ -216,13 +216,60 @@ onMounted(() => {
 })
 
 function getSortedNumbers() { const sorted = [...selectedNumbers.value]; sortOrder.value === 'asc' ? sorted.sort((a, b) => a - b) : sorted.sort((a, b) => b - a); return sorted }
-function handleSelect(id: number) { if (typeof id !== 'number' || id < 1 || id > 49) return; const index = selectedNumbers.value.indexOf(id); index > -1 ? selectedNumbers.value.splice(index, 1) : selectedNumbers.value.push(id) }
 function getWaveColorById(id: number): string { return recordById.value.get(id)?.wave.key || '' }
 function clearSelectedNumbers() { selectedNumbers.value = []; sortOrder.value = 'none'; selectedConditionOptions.value = [] }
+
+// ═══ 拖拽批量选择 ═══
+const gridRef = ref<HTMLElement>()
+const isDragging = ref(false)
+const dragAction = ref<'add' | 'remove'>('add')
+let lastSelectId = -1
+let lastSelectTime = 0
+
+function handleSelect(id: number) {
+  // 防抖：防止 pointerdown + click 双重触发同一号码
+  const now = Date.now()
+  if (id === lastSelectId && now - lastSelectTime < 300) return
+  if (typeof id !== 'number' || id < 1 || id > 49) return
+  lastSelectId = id
+  lastSelectTime = now
+  const index = selectedNumbers.value.indexOf(id)
+  index > -1 ? selectedNumbers.value.splice(index, 1) : selectedNumbers.value.push(id)
+}
+
+function onGridPointerDown(e: PointerEvent) {
+  // 通过 data-num-id 找到被点击的数字按钮
+  const btn = (e.target as HTMLElement).closest('[data-num-id]') as HTMLElement | null
+  if (!btn) return
+  const id = parseInt(btn.getAttribute('data-num-id')!, 10)
+  if (isNaN(id)) return
+
+  isDragging.value = true
+  dragAction.value = selectedNumbers.value.includes(id) ? 'remove' : 'add'
+  handleSelect(id)
+  gridRef.value?.setPointerCapture(e.pointerId)
+}
+
+function onGridPointerMove(e: PointerEvent) {
+  if (!isDragging.value) return
+
+  const el = document.elementFromPoint(e.clientX, e.clientY)
+  if (!el) return
+  const btn = (el as HTMLElement).closest('[data-num-id]') as HTMLElement | null
+  if (!btn) return
+  const id = parseInt(btn.getAttribute('data-num-id')!, 10)
+  if (isNaN(id)) return
+
+  const isSelected = selectedNumbers.value.includes(id)
+  if (dragAction.value === 'add' && !isSelected) handleSelect(id)
+  else if (dragAction.value === 'remove' && isSelected) handleSelect(id)
+}
+
+function onGridPointerUp() { isDragging.value = false }
 </script>
 
 <template>
-  <div class="flex flex-col min-h-full" style="background-color: var(--page-bg)">
+  <div class="flex flex-col min-h-full" style="background-color: var(--page-bg)" @touchmove.prevent>
     <!-- Header -->
     <div class="sticky top-0 z-50 bg-base-100 border-b border-base-200 flex items-center justify-between px-3 h-12">
       <div class="w-8"></div>
@@ -319,13 +366,13 @@ function clearSelectedNumbers() { selectedNumbers.value = []; sortOrder.value = 
       </section>
 
       <!-- Number Grid -->
-      <section v-else-if="activeTab==='number'" class="u-section">
+      <section v-else-if="activeTab==='number'" class="u-section" style="touch-action:none;user-select:none" ref="gridRef" @pointerdown="onGridPointerDown" @pointermove="onGridPointerMove" @pointerup="onGridPointerUp" @pointercancel="onGridPointerUp">
         <div class="grid grid-cols-7 gap-1.5 justify-items-center">
-          <NumberButton v-for="number in filteredGridNumbers" :key="`num-${number.id}`" :id="Number(number.id)" :active="selectedNumbers.includes(Number(number.id))" :wave-color="number.wave.key" :five-elements="number.wuxing.label" :chinese-zodiac="number.zodiac.label" :odd-and-even="number.oddAndEven==='odd'?'单':'双'" :sum-odd-and-even="number.sumOddAndEven==='odd'?'合单':'合双'" @select="handleSelect" />
+          <NumberButton v-for="number in filteredGridNumbers" :key="`num-${number.id}`" :data-num-id="number.id" :id="Number(number.id)" :active="selectedNumbers.includes(Number(number.id))" :wave-color="number.wave.key" :five-elements="number.wuxing.label" :chinese-zodiac="number.zodiac.label" :odd-and-even="number.oddAndEven==='odd'?'单':'双'" :sum-odd-and-even="number.sumOddAndEven==='odd'?'合单':'合双'" @select="handleSelect" />
         </div>
         <p class="flex items-center justify-center gap-1 mt-3 text-xs text-secondary">
           <span class="icon-[tabler--info-circle] size-3.5"></span>
-          点击号码可选择，长按可排除
+          滑动可批量选择
         </p>
       </section>
 
