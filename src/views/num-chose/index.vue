@@ -269,7 +269,7 @@ function onGridPointerUp() { isDragging.value = false }
 </script>
 
 <template>
-  <div class="flex flex-col min-h-full" style="background-color: var(--page-bg)" @touchmove.prevent>
+  <div class="flex flex-col min-h-full" style="background-color: var(--page-bg)">
     <!-- Header -->
     <div class="sticky top-0 z-50 bg-base-100 border-b border-base-200 flex items-center justify-between px-3 h-12">
       <div class="w-8"></div>
