@@ -35,6 +35,12 @@ const openDetail = () => {
 }
 const closeDetail = () => { showDetail.value = false }
 
+// 删除整个生肖分组
+const removeGroup = (group: ZodiacGroup) => {
+  group.items.forEach(item => emit('toggleExclusion', item.num))
+  toast(`已删除${group.zodiac}肖 ${group.items.length} 个号码`)
+}
+
 // 按 ESC 关闭
 watch(showDetail, (v) => {
   if (!v) return
@@ -140,8 +146,18 @@ const copyResults = async () => {
                   class="zodiac-group"
                 >
                   <div class="zodiac-group__header">
-                    <span class="zodiac-group__name">{{ group.zodiac }}</span>
-                    <span class="zodiac-group__count">{{ group.items.length }}</span>
+                    <div class="flex items-center gap-1.5">
+                      <span class="zodiac-group__name">{{ group.zodiac }}</span>
+                      <span class="zodiac-group__count">{{ group.items.length }}</span>
+                    </div>
+                    <button
+                      class="zodiac-group__delete"
+                      title="删除整组"
+                      @click.stop="removeGroup(group)"
+                    >
+                      <span class="icon-[tabler--trash] size-3.5"></span>
+                      <span>删除</span>
+                    </button>
                   </div>
                   <div class="zodiac-group__items">
                     <div
@@ -154,6 +170,13 @@ const copyResults = async () => {
                         'zodiac-num--blue': item.wave === 'blue',
                       }"
                     >
+                      <button
+                        class="zodiac-num__delete"
+                        title="删除"
+                        @click.stop="emit('toggleExclusion', item.num)"
+                      >
+                        <span class="icon-[tabler--x] size-2.5"></span>
+                      </button>
                       <span class="zodiac-num__value">{{ item.num }}</span>
                       <span class="zodiac-num__wuxing">{{ item.wuxing }}</span>
                     </div>
@@ -478,6 +501,24 @@ const copyResults = async () => {
   border-radius: 999px;
 }
 
+.zodiac-group__delete {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: var(--color-primary-content);
+  border: none;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.1s;
+}
+.zodiac-group__delete:hover { filter: brightness(1.08); }
+.zodiac-group__delete:active { transform: scale(0.94); }
+
 .zodiac-group__items {
   display: flex;
   flex-wrap: wrap;
@@ -485,6 +526,7 @@ const copyResults = async () => {
 }
 
 .zodiac-num {
+  position: relative;
   display: inline-flex;
   flex-direction: column;
   align-items: center;
@@ -495,6 +537,27 @@ const copyResults = async () => {
   border: 1px solid;
   font-variant-numeric: tabular-nums;
 }
+
+.zodiac-num__delete {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: var(--color-primary-content);
+  border: 1.5px solid var(--color-base-100);
+  cursor: pointer;
+  transition: transform 0.1s, filter 0.15s;
+  z-index: 1;
+  line-height: 1;
+}
+.zodiac-num__delete:hover { filter: brightness(1.08); }
+.zodiac-num__delete:active { transform: scale(0.85); }
 
 .zodiac-num__value {
   font-size: 13px;

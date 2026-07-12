@@ -14,6 +14,7 @@ export function useFilterLogic() {
   }
 
   const selectedFilters = ref<string[]>([])
+  const excludedFilters = ref<string[]>([])
   const excludedNumbers = ref<string[]>([])
   const searchText = ref('')
   const searchType = ref<'exact' | 'fuzzy' | 'regex'>('fuzzy')
@@ -57,7 +58,7 @@ export function useFilterLogic() {
   })
 
   const filteredNumbers = computed(() => {
-    if (selectedFilters.value.length === 0 && !searchText.value) {
+    if (selectedFilters.value.length === 0 && !searchText.value && excludedFilters.value.length === 0) {
       return []
     }
 
@@ -78,6 +79,13 @@ export function useFilterLogic() {
           if (!filtersInCat) return true
           return filtersInCat.some(filter => matchesFilter(numObj, filter))
         })
+      })
+    }
+
+    // 反过滤：排除匹配禁止条件的号码
+    if (excludedFilters.value.length > 0) {
+      result = result.filter(numObj => {
+        return !excludedFilters.value.some(filter => matchesFilter(numObj, filter))
       })
     }
 
@@ -128,6 +136,7 @@ export function useFilterLogic() {
 
   const clearFilters = () => {
     selectedFilters.value = []
+    excludedFilters.value = []
     excludedNumbers.value = []
     toast('已清空条件')
   }
@@ -141,10 +150,20 @@ export function useFilterLogic() {
     }
   }
 
+  const toggleExcludedFilter = (item: string) => {
+    const index = excludedFilters.value.indexOf(item)
+    if (index === -1) {
+      excludedFilters.value.push(item)
+    } else {
+      excludedFilters.value.splice(index, 1)
+    }
+  }
+
   const onSave = () => {
     try {
       const settings = {
         filters: selectedFilters.value,
+        excludedFilters: excludedFilters.value,
         excluded: excludedNumbers.value
       }
       localStorage.setItem('filterSettings', JSON.stringify(settings))
@@ -160,6 +179,7 @@ export function useFilterLogic() {
       try {
         const settings = JSON.parse(saved)
         selectedFilters.value = settings.filters || []
+        excludedFilters.value = settings.excludedFilters || []
         excludedNumbers.value = settings.excluded || []
         toast('筛选条件已加载')
       } catch (e) {
@@ -172,6 +192,7 @@ export function useFilterLogic() {
 
   return {
     selectedFilters,
+    excludedFilters,
     filteredNumbers,
     totalItems,
     searchText,
@@ -180,6 +201,7 @@ export function useFilterLogic() {
     toggleFilter,
     clearFilters,
     toggleExclusion,
+    toggleExcludedFilter,
     onSave,
     onLoad,
     getWaveColorById,

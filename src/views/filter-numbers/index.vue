@@ -7,8 +7,8 @@ import ResultStickyHeader from './components/ResultStickyHeader.vue'
 
 const router = useRouter()
 const {
-  selectedFilters, filteredNumbers, totalItems,
-  toggleFilter, clearFilters, toggleExclusion,
+  selectedFilters, excludedFilters, filteredNumbers, totalItems,
+  toggleFilter, clearFilters, toggleExclusion, toggleExcludedFilter,
   onSave, onLoad, getWaveColorById,
   groupedByZodiac,
 } = useFilterLogic()
@@ -17,8 +17,8 @@ const selectedCount = computed(() => selectedFilters.value.length)
 const onClickLeft = () => router.back()
 
 // ── 分区折叠状态 ──
-const sectionNames = ['basic', 'zodiac', 'headTail', 'composite']
-const expandedSections = ref(['basic', 'zodiac', 'headTail'])
+const sectionNames = ['basic', 'zodiac', 'exclude', 'headTail', 'composite']
+const expandedSections = ref(['basic', 'zodiac', 'exclude', 'headTail'])
 
 function toggleSection(name: string) {
   const i = expandedSections.value.indexOf(name)
@@ -28,11 +28,16 @@ function toggleSection(name: string) {
 // 统计每个分区的选中数量
 const basicKeys = ['单', '双', '大', '小', '红波', '绿波', '蓝波', '金', '木', '水', '火', '土']
 const zodiacKeys = ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪', '家禽', '野兽', '天肖', '地肖', '前肖', '后肖', '左肖', '右肖', '阴肖', '阳肖', '红单', '红双', '绿单', '绿双', '蓝单', '蓝双', '男肖', '女肖', '肉肖', '菜肖', '草肖', '春', '夏', '秋', '冬', '风', '雨', '雷', '电', '琴', '棋', '书', '画']
+const excludedKeys = ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪']
 const headTailKeys = ['0头', '1头', '2头', '3头', '4头', '0尾', '1尾', '2尾', '3尾', '4尾', '5尾', '6尾', '7尾', '8尾', '9尾']
 const compositeKeys = ['合单', '合双', '合大', '合小', '尾大', '尾小', '大单', '小单', '大双', '小双', '1门', '2门', '3门', '4门', '5门', '1段', '2段', '3段', '4段', '5段', '6段', '7段', '1合', '2合', '3合', '4合', '5合', '6合', '7合', '8合', '9合', '10合', '11合', '12合', '13合']
 
 function countIn(keys: string[]): number {
   return keys.filter(k => selectedFilters.value.includes(k)).length
+}
+
+function countExcluded(keys: string[]): number {
+  return keys.filter(k => excludedFilters.value.includes(k)).length
 }
 
 // ── 更多操作 ──
@@ -206,7 +211,38 @@ function waveComboClass(item: string): string {
         </div>
       </section>
 
-      <!-- ─── 分区3：头数与尾数精确控制 ─── -->
+      <!-- ─── 分区3：反过滤（禁止内容） ─── -->
+      <section class="filter-section">
+        <button type="button" class="section-header" @click="toggleSection('exclude')">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="section-indicator section-indicator--exclude"></span>
+            <h2 class="text-[13px] font-bold text-base-content truncate">反过滤</h2>
+            <span v-if="countExcluded(excludedKeys) > 0" class="section-count section-count--exclude">{{ countExcluded(excludedKeys) }}</span>
+          </div>
+          <span
+            class="icon-[tabler--chevron-down] size-4 text-secondary transition-transform duration-200"
+            :class="{ 'rotate-180': expandedSections.includes('exclude') }"
+          ></span>
+        </button>
+
+        <div v-if="expandedSections.includes('exclude')" class="section-body">
+          <div class="filter-block">
+            <div class="text-[10px] font-semibold text-secondary">禁止生肖（排除对应号码）</div>
+            <div class="grid grid-cols-6 gap-1.5">
+              <button
+                v-for="item in excludedKeys"
+                :key="item"
+                type="button"
+                class="chip-zodiac"
+                :class="{ 'chip-zodiac--excluded': excludedFilters.includes(item) }"
+                @click="toggleExcludedFilter(item)"
+              >{{ item }}</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── 分区4：头数与尾数精确控制 ─── -->
       <section class="filter-section">
         <button type="button" class="section-header" @click="toggleSection('headTail')">
           <div class="flex items-center gap-2 min-w-0">
@@ -251,7 +287,7 @@ function waveComboClass(item: string): string {
         </div>
       </section>
 
-      <!-- ─── 分区4：合数与门段（默认折叠） ─── -->
+      <!-- ─── 分区5：合数与门段（默认折叠） ─── -->
       <section class="filter-section">
         <button type="button" class="section-header" @click="toggleSection('composite')">
           <div class="flex items-center gap-2 min-w-0">
@@ -536,7 +572,7 @@ function waveComboClass(item: string): string {
   border: 1px solid transparent;
 }
 .chip-zodiac:active { transform: scale(0.96); }
-.chip-zodiac:not(.chip-zodiac--active):hover { background: var(--color-base-300); }
+.chip-zodiac:not(.chip-zodiac--active):not(.chip-zodiac--excluded):hover { background: var(--color-base-300); }
 .chip-zodiac--active {
   background: var(--color-primary);
   color: var(--color-primary-content);
@@ -548,6 +584,29 @@ function waveComboClass(item: string): string {
   background: var(--color-primary);
   color: var(--color-primary-content);
   filter: brightness(1.08);
+}
+
+/* 反过滤：禁止态（红色警示） */
+.chip-zodiac--excluded {
+  background: var(--color-error);
+  color: var(--color-error-content);
+  border-color: var(--color-error);
+  font-weight: 700;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-error) 45%, transparent), inset 0 0 0 2px color-mix(in srgb, var(--color-error) 50%, #000);
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+.chip-zodiac--excluded:hover {
+  filter: brightness(1.08);
+}
+
+/* 反过滤分区指示器与计数（红色系） */
+.section-indicator--exclude {
+  background: var(--color-error);
+}
+.section-count--exclude {
+  background: color-mix(in srgb, var(--color-error) 18%, transparent);
+  color: var(--color-error);
 }
 
 /* ═══ 标签芯片（多属性） ═══ */
