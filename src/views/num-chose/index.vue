@@ -2,14 +2,16 @@
 defineOptions({ name: 'NumChosePage' })
 import { ref, computed, onMounted, watch } from 'vue'
 import NumberButton from './components/NumberButton.vue'
-import { lotteryDataService, type ZodiacKey, type WuxingKey, type WaveKey } from '@/services/lotteryData'
+import { lotteryDataService, type ZodiacKey, type WuxingKey } from '@/services/lotteryData'
 import { toast } from '@/utils/feedback'
-import { getFilterIds, getOtherAttrIds } from '@/utils/numberMatcher'
+import { getFilterIds } from '@/utils/numberMatcher'
 
 // 手动输入弹窗状态
 const showManualInputDialog = ref(false)
 const manualInputText = ref('')
 const customDelimiter = ref(',')
+// 手动输入的号码池（作为条件选号的筛选基数）
+const manualNumbers = ref<number[]>([])
 
 function openManualInputDialog() { showManualInputDialog.value = true }
 function closeManualInputDialog() { showManualInputDialog.value = false; manualInputText.value = '' }
@@ -21,8 +23,14 @@ function handleManualInputConfirm() {
   const numbers = text.split(regex).filter(s => s).map(s => isNaN(parseInt(s, 10)) ? null : parseInt(s, 10)).filter(n => n !== null && n >= 1 && n <= 49) as number[]
   if (numbers.length === 0) { toast('未识别到有效号码(1-49)'); return }
   const uniqueNumbers = [...new Set(numbers)]
-  const existingSet = new Set(selectedNumbers.value); for (const n of uniqueNumbers) existingSet.add(n)
-  selectedNumbers.value = Array.from(existingSet).sort((a, b) => a - b)
+  manualNumbers.value = Array.from(new Set([...manualNumbers.value, ...uniqueNumbers])).sort((a, b) => a - b)
+  // 有条件时结果由条件决定（手动池作为基数）；无条件时直接合并
+  if (includeConditionOptions.value.length > 0 || excludeConditionOptions.value.length > 0) {
+    selectedNumbers.value = conditionHitNumbers.value
+  } else {
+    const existingSet = new Set(selectedNumbers.value); for (const n of uniqueNumbers) existingSet.add(n)
+    selectedNumbers.value = Array.from(existingSet).sort((a, b) => a - b)
+  }
   toast(`已添加 ${uniqueNumbers.length} 个号码`); closeManualInputDialog()
 }
 
@@ -30,10 +38,6 @@ function handleManualInputConfirm() {
 const activeTab = ref<'number' | 'zodiac' | 'five' | 'condition'>('number')
 const selectedNumbers = ref<number[]>([])
 const sortOrder = ref<'asc' | 'desc' | 'none'>('none')
-const resultsExpanded = ref(true)
-const filtersExpanded = ref(true)
-const moreFiltersExpanded = ref(false)
-const zodiacFilterExpanded = ref(false)
 
 const tabs: { key: 'number' | 'zodiac' | 'five' | 'condition'; label: string; icon: string }[] = [
   { key: 'number', label: '数字选号', icon: 'icon-[tabler--apps]' },
@@ -50,7 +54,6 @@ const elementOptions: { key: WuxingKey; label: string }[] = [
 const selectedElement = ref<WuxingKey>('metal')
 const stickySelected = ref<boolean>(false)
 const stickyEnabled = computed(() => stickySelected.value)
-const resultsStickySelected = ref<boolean>(false)
 
 const idsByElement = computed(() => {
   const acc = {} as Record<WuxingKey, number[]>
@@ -75,8 +78,6 @@ const metaByKey: Record<ZodiacKey, { name: string; emoji: string }> = {
 const zodiacOptions: { key: ZodiacKey; name: string; emoji: string }[] =
   (['rat', 'ox', 'tiger', 'rabbit', 'dragon', 'snake', 'horse', 'goat', 'monkey', 'rooster', 'dog', 'pig'] as ZodiacKey[]).map(key => ({ key, name: metaByKey[key].name, emoji: metaByKey[key].emoji }))
 
-const zodiacFilterOptions = computed(() => zodiacFilterExpanded.value ? zodiacOptions : zodiacOptions.slice(0, 6))
-
 const numbersByZodiac = computed(() => {
   const acc = {} as Record<ZodiacKey, number[]>
   zodiacOptions.forEach(opt => { acc[opt.key] = numbers.value.filter(n => n.zodiac.key === opt.key).map(n => n.id).sort((a, b) => a - b) })
@@ -94,84 +95,86 @@ const zodiacCardList = computed(() => zodiacCardOrderMode.value === 'number' ? z
 
 // 条件选号配置（与 filter-numbers 过滤条件对齐：基础属性/生肖联动/头尾/合数门段）
 type ConditionChipType = 'wave' | 'wuxing' | 'zodiac' | 'tag' | 'tail'
-interface ConditionGroup { label: string; type: ConditionChipType; options: string[] }
+interface ConditionSubGroup { label: string; type: ConditionChipType; options: string[] }
+interface ConditionGroup {
+  label: string
+  type: ConditionChipType | 'combined'
+  options: string[]
+  groups?: ConditionSubGroup[]
+}
 interface ConditionSection { name: string; groups: ConditionGroup[] }
 
 const conditionSections: ConditionSection[] = [
-  { name: '基础属性', groups: [
-    { label: '单双大小', type: 'tag', options: ['单', '双', '大', '小'] },
-    { label: '波色', type: 'wave', options: ['红波', '绿波', '蓝波'] },
-    { label: '五行', type: 'wuxing', options: ['金', '木', '水', '火', '土'] },
-  ]},
-  { name: '生肖与联动', groups: [
+  { name: '常用', groups: [
     { label: '生肖', type: 'zodiac', options: ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪'] },
+    { label: '头数', type: 'tail', options: ['0头', '1头', '2头', '3头', '4头'] },
+    { label: '尾数', type: 'tail', options: ['0尾', '1尾', '2尾', '3尾', '4尾', '5尾', '6尾', '7尾', '8尾', '9尾'] },
+    { label: '属性', type: 'combined', options: [], groups: [
+      { label: '单双大小', type: 'tag', options: ['单', '双', '大', '小'] },
+      { label: '五行', type: 'wuxing', options: ['金', '木', '水', '火', '土'] },
+      { label: '波色单双', type: 'wave', options: ['红单', '红双', '绿单', '绿双', '蓝单', '蓝双'] },
+    ]},
+    { label: '波色', type: 'wave', options: ['红波', '绿波', '蓝波'] },
+  ]},
+  { name: '其他', groups: [
+    { label: '门数', type: 'tag', options: ['1门', '2门', '3门', '4门', '5门'] },
+    { label: '段数', type: 'tag', options: ['1段', '2段', '3段', '4段', '5段', '6段', '7段'] },
+    { label: '合数', type: 'tag', options: ['1合', '2合', '3合', '4合', '5合', '6合', '7合', '8合', '9合', '10合', '11合', '12合', '13合'] },
     { label: '家禽野兽', type: 'tag', options: ['家禽', '野兽'] },
     { label: '男/女肖', type: 'tag', options: ['男肖', '女肖'] },
     { label: '肉/菜/草肖', type: 'tag', options: ['肉肖', '菜肖', '草肖'] },
     { label: '前/后/左/右肖', type: 'tag', options: ['前肖', '后肖', '左肖', '右肖'] },
     { label: '阴/阳肖', type: 'tag', options: ['阴肖', '阳肖'] },
-    { label: '波色单双', type: 'tag', options: ['红单', '红双', '绿单', '绿双', '蓝单', '蓝双'] },
     { label: '季节', type: 'tag', options: ['春', '夏', '秋', '冬'] },
     { label: '天气', type: 'tag', options: ['风', '雨', '雷', '电'] },
     { label: '琴棋书画', type: 'tag', options: ['琴', '棋', '书', '画'] },
-  ]},
-  { name: '头数与尾数', groups: [
-    { label: '头数', type: 'tail', options: ['0头', '1头', '2头', '3头', '4头'] },
-    { label: '尾数', type: 'tail', options: ['0尾', '1尾', '2尾', '3尾', '4尾', '5尾', '6尾', '7尾', '8尾', '9尾'] },
-  ]},
-  { name: '合数与门段', groups: [
     { label: '合单双', type: 'tag', options: ['合单', '合双'] },
     { label: '合大小', type: 'tag', options: ['合大', '合小'] },
     { label: '尾大小', type: 'tag', options: ['尾大', '尾小'] },
     { label: '大小单双', type: 'tag', options: ['大单', '小单', '大双', '小双'] },
-    { label: '门数', type: 'tag', options: ['1门', '2门', '3门', '4门', '5门'] },
-    { label: '段数', type: 'tag', options: ['1段', '2段', '3段', '4段', '5段', '6段', '7段'] },
-    { label: '合数', type: 'tag', options: ['1合', '2合', '3合', '4合', '5合', '6合', '7合', '8合', '9合', '10合', '11合', '12合', '13合'] },
   ]},
 ]
 
-// 分区折叠状态（默认全部展开）
-const expandedConditionSections = ref<string[]>(conditionSections.map(s => s.name))
-function toggleConditionSection(name: string) {
-  const i = expandedConditionSections.value.indexOf(name)
-  i > -1 ? expandedConditionSections.value.splice(i, 1) : expandedConditionSections.value.push(name)
-}
-function countConditionIn(sec: ConditionSection): number {
-  const allOpts = sec.groups.flatMap(g => g.options)
-  return allOpts.filter(o => selectedConditionOptions.value.includes(o)).length
-}
+
 // 波色样式辅助（与 filter-numbers 一致：未选中按波色着色，选中实色填充）
 function waveClass(label: string): string {
-  if (label === '红波') return 'chip-wave--red'
-  if (label === '绿波') return 'chip-wave--green'
-  if (label === '蓝波') return 'chip-wave--blue'
-  return ''
-}
-function waveComboClass(label: string): string {
-  if (label.startsWith('红')) return 'cwc--red'
-  if (label.startsWith('绿')) return 'cwc--green'
-  if (label.startsWith('蓝')) return 'cwc--blue'
+  if (label.startsWith('红')) return 'chip-wave--red'
+  if (label.startsWith('绿')) return 'chip-wave--green'
+  if (label.startsWith('蓝')) return 'chip-wave--blue'
   return ''
 }
 // 按 chip 类型拼装 class
-function conditionChipClass(type: ConditionChipType, opt: string, active: boolean): string {
+function conditionChipClass(type: ConditionChipType | 'combined', opt: string, active: boolean): string {
   switch (type) {
     case 'wave': return `chip-wave ${waveClass(opt)} ${active ? 'chip-wave--active' : ''}`
     case 'wuxing': return `chip-wuxing ${active ? 'chip-wuxing--active' : ''}`
     case 'zodiac': return `chip-zodiac ${active ? 'chip-zodiac--active' : ''}`
     case 'tail': return `chip-tail ${active ? 'chip-tail--active' : ''}`
-    default: return `chip-tag ${waveComboClass(opt)} ${active ? 'chip-tag--active' : ''}`
+    default: return `chip-tag ${active ? 'chip-tag--active' : ''}`
   }
 }
-const selectedConditionOptions = ref<string[]>([])
-function toggleConditionOption(opt: string) { const i = selectedConditionOptions.value.indexOf(opt); i > -1 ? selectedConditionOptions.value.splice(i, 1) : selectedConditionOptions.value.push(opt) }
-function clearAllConditions() { selectedConditionOptions.value = [] }
+// 包含 / 排除 两分区（各分区内条件组间为 AND，组内 OR；排除取并集）
+const includeExpanded = ref(true)
+const excludeExpanded = ref(false)
+// 常用 / 其他 分组切换
+const includeGroupTab = ref<'常用' | '其他'>('常用')
+const excludeGroupTab = ref<'常用' | '其他'>('常用')
+const includeConditionOptions = ref<string[]>([])
+const excludeConditionOptions = ref<string[]>([])
+function toggleIncludeOption(opt: string) { const i = includeConditionOptions.value.indexOf(opt); i > -1 ? includeConditionOptions.value.splice(i, 1) : includeConditionOptions.value.push(opt) }
+function toggleExcludeOption(opt: string) { const i = excludeConditionOptions.value.indexOf(opt); i > -1 ? excludeConditionOptions.value.splice(i, 1) : excludeConditionOptions.value.push(opt) }
+function clearAllConditions() { includeConditionOptions.value = []; excludeConditionOptions.value = [] }
 
-const conditionResultNumbers = computed(() => {
-  const allGroups = conditionSections.flatMap(s => s.groups)
+const conditionGroups = computed<ConditionSubGroup[]>(() =>
+  conditionSections.flatMap(s => s.groups).flatMap(g => g.type === 'combined' && g.groups ? g.groups : [g as ConditionSubGroup])
+)
+const conditionGroupNames = computed<('常用' | '其他')[]>(() => conditionSections.map(s => s.name as '常用' | '其他'))
+
+// 包含结果：组内 OR、组间 AND（交集）
+const includeResultNumbers = computed(() => {
   const sets: Set<number>[] = []
-  for (const g of allGroups) {
-    const sel = selectedConditionOptions.value.filter(o => g.options.includes(o))
+  for (const g of conditionGroups.value) {
+    const sel = includeConditionOptions.value.filter(o => g.options.includes(o))
     if (sel.length > 0) { const u = new Set<number>(); for (const o of sel) for (const n of getFilterIds(o)) u.add(n); sets.push(u) }
   }
   if (sets.length === 0) return []
@@ -180,87 +183,80 @@ const conditionResultNumbers = computed(() => {
   return result.sort((a, b) => a - b)
 })
 
-watch(selectedConditionOptions, (vals) => { if (vals.length > 0) selectedNumbers.value = conditionResultNumbers.value; else selectedNumbers.value = [] }, { deep: true })
+// 排除集合：满足任一排除条件即排除（并集）
+const excludeResultNumbers = computed(() => {
+  const u = new Set<number>()
+  for (const o of excludeConditionOptions.value) for (const n of getFilterIds(o)) u.add(n)
+  return u
+})
+
+// 当前条件下命中的号码（独立于 selectedNumbers，实时反映包含/排除结果）
+// 基数：优先使用手动输入的号码池，否则为全部号码
+const conditionHitNumbers = computed(() => {
+  const hasInclude = includeConditionOptions.value.length > 0
+  const hasExclude = excludeConditionOptions.value.length > 0
+  if (!hasInclude && !hasExclude) return manualNumbers.value.slice().sort((a, b) => a - b)
+  const pool = manualNumbers.value.length > 0 ? manualNumbers.value : numbers.value.map(n => n.id)
+  let base = hasInclude ? includeResultNumbers.value.filter(n => pool.includes(n)) : pool.slice()
+  if (hasExclude) base = base.filter(n => !excludeResultNumbers.value.has(n))
+  return base.sort((a, b) => a - b)
+})
+
+watch([includeConditionOptions, excludeConditionOptions], () => {
+  selectedNumbers.value = conditionHitNumbers.value
+}, { deep: true })
+const conditionHitPreview = computed(() => conditionHitNumbers.value.slice(0, 20))
+function waveHitClass(id: number): string {
+  const w = recordById.value.get(id)?.wave.key
+  if (w === 'red') return 'bg-error/10 text-error border-error/30'
+  if (w === 'green') return 'bg-success/10 text-success border-success/30'
+  if (w === 'blue') return 'bg-info/10 text-info border-info/30'
+  return 'bg-primary/10 text-primary border-primary/30'
+}
+function copyConditionHit() {
+  const text = conditionHitNumbers.value.map(pad2).join('.')
+  if (!text) { toast('暂无命中号码'); return }
+  navigator.clipboard.writeText(text).then(() => toast('已复制命中号码')).catch(() => {})
+}
 
 // 生肖选号
 const selectedZodiacs = ref<ZodiacKey[]>([])
 function toggleZodiac(key: ZodiacKey) {
-  const i = selectedZodiacs.value.indexOf(key)
-  if (i > -1) { selectedZodiacs.value.splice(i, 1); const removeSet = new Set(numbersByZodiac.value[key]); selectedNumbers.value = selectedNumbers.value.filter(n => !removeSet.has(n)) }
-  else { selectedZodiacs.value.push(key); const set = new Set(selectedNumbers.value); for (const n of numbersByZodiac.value[key]) set.add(n); selectedNumbers.value = Array.from(set).sort((a, b) => a - b) }
+  const zodiacNums = numbersByZodiac.value[key]
+  // 以"该生肖号码当前是否已在选中集合"为判断依据，保证与显示状态一致（含手动输入来源），点击一次即可取消
+  const hasSelected = zodiacNums.some(n => selectedNumbers.value.includes(n))
+  if (hasSelected) {
+    const i = selectedZodiacs.value.indexOf(key)
+    if (i > -1) selectedZodiacs.value.splice(i, 1)
+    const removeSet = new Set(zodiacNums)
+    selectedNumbers.value = selectedNumbers.value.filter(n => !removeSet.has(n))
+  } else {
+    if (!selectedZodiacs.value.includes(key)) selectedZodiacs.value.push(key)
+    const set = new Set(selectedNumbers.value)
+    for (const n of zodiacNums) set.add(n)
+    selectedNumbers.value = Array.from(set).sort((a, b) => a - b)
+  }
 }
-function clearZodiac() { const remove = new Set<number>(); for (const k of selectedZodiacs.value) for (const n of numbersByZodiac.value[k]) remove.add(n); selectedZodiacs.value = []; selectedNumbers.value = selectedNumbers.value.filter(n => !remove.has(n)) }
+function clearZodiac() {
+  const remove = new Set<number>()
+  for (const k of selectedZodiacs.value) for (const n of numbersByZodiac.value[k]) remove.add(n)
+  selectedZodiacs.value = []
+  selectedNumbers.value = selectedNumbers.value.filter(n => !remove.has(n))
+}
 
 function pad2(n: number) { return String(n).padStart(2, '0') }
 function isZodiacActive(key: ZodiacKey) { return numbersByZodiac.value[key].some(n => selectedNumbers.value.includes(n)) }
 function selectAllCurrentElement() { const set = new Set(selectedNumbers.value); for (const n of idsByElement.value[selectedElement.value]) set.add(n); selectedNumbers.value = Array.from(set).sort((a, b) => a - b) }
 
-// Filters
-const oddEvenFilter = ref<'all' | 'odd' | 'even'>('all')
-const sumOddEvenFilter = ref<'all' | 'oddSum' | 'evenSum'>('all')
-const selectedHeads = ref<number[]>([])
-const selectedUnits = ref<number[]>([])
-const selectedElementsFilter = ref<WuxingKey[]>([])
-function toggleElementFilter(e: WuxingKey) { const i = selectedElementsFilter.value.indexOf(e); i > -1 ? selectedElementsFilter.value.splice(i, 1) : selectedElementsFilter.value.push(e) }
-const homeWildFilter = ref<'all' | 'home' | 'wild'>('all')
-const skyEarthFilter = ref<'all' | 'sky' | 'earth'>('all')
-const selectedWaveColors = ref<WaveKey[]>([])
-function toggleWaveColor(c: WaveKey) { const i = selectedWaveColors.value.indexOf(c); i > -1 ? selectedWaveColors.value.splice(i, 1) : selectedWaveColors.value.push(c) }
-type WaveOddEven = 'red-odd' | 'red-even' | 'green-odd' | 'green-even' | 'blue-odd' | 'blue-even'
-const selectedWaveOddEven = ref<WaveOddEven[]>([])
-function toggleWaveOddEven(v: WaveOddEven) { const i = selectedWaveOddEven.value.indexOf(v); i > -1 ? selectedWaveOddEven.value.splice(i, 1) : selectedWaveOddEven.value.push(v) }
-const selectedZodiacsFilter = ref<ZodiacKey[]>([])
-function toggleZodiacFilter(k: ZodiacKey) { const i = selectedZodiacsFilter.value.indexOf(k); i > -1 ? selectedZodiacsFilter.value.splice(i, 1) : selectedZodiacsFilter.value.push(k) }
-const selectedMenFilter = ref<string[]>([])
-function toggleMenFilter(v: string) { const i = selectedMenFilter.value.indexOf(v); i > -1 ? selectedMenFilter.value.splice(i, 1) : selectedMenFilter.value.push(v) }
-const selectedDuanFilter = ref<string[]>([])
-function toggleDuanFilter(v: string) { const i = selectedDuanFilter.value.indexOf(v); i > -1 ? selectedDuanFilter.value.splice(i, 1) : selectedDuanFilter.value.push(v); }
-
-const selectedHeShuFilter = ref<string[]>([])
-function toggleHeShuFilter(v: string) { const i = selectedHeShuFilter.value.indexOf(v); i > -1 ? selectedHeShuFilter.value.splice(i, 1) : selectedHeShuFilter.value.push(v) }
-
-const availableHeads = computed(() => { const s = new Set<number>(); for (const n of selectedNumbers.value) s.add(Math.floor(n / 10)); return Array.from(s).sort((a, b) => a - b) })
-const availableUnits = computed(() => { const s = new Set<number>(); for (const n of selectedNumbers.value) s.add(n % 10); return Array.from(s).sort((a, b) => a - b) })
-
-function toggleHead(h: number) { const i = selectedHeads.value.indexOf(h); i > -1 ? selectedHeads.value.splice(i, 1) : selectedHeads.value.push(h) }
-function toggleUnit(u: number) { const i = selectedUnits.value.indexOf(u); i > -1 ? selectedUnits.value.splice(i, 1) : selectedUnits.value.push(u) }
-
-function clearAllFilters() {
-  oddEvenFilter.value = 'all'; sumOddEvenFilter.value = 'all'; selectedHeads.value = []; selectedUnits.value = []
-  homeWildFilter.value = 'all'; skyEarthFilter.value = 'all'; selectedElementsFilter.value = []
-  selectedWaveColors.value = []; selectedWaveOddEven.value = []; selectedZodiacsFilter.value = []
-  selectedMenFilter.value = []; selectedDuanFilter.value = []; selectedHeShuFilter.value = []
-  toast('已清空所有过滤')
-}
-
 const filteredGridNumbers = computed(() => numbers.value.slice())
-
-const filteredSelectedRecords = computed(() => {
-  const base = selectedNumbers.value.map(id => recordById.value.get(id)).filter((r): r is any => !!r)
-  let list = base
-  if (oddEvenFilter.value !== 'all') list = list.filter((i: any) => i.oddAndEven === oddEvenFilter.value)
-  if (sumOddEvenFilter.value !== 'all') { const val = sumOddEvenFilter.value === 'oddSum' ? 'odd' : 'even'; list = list.filter((i: any) => i.sumOddAndEven === val) }
-  if (selectedHeads.value.length > 0) list = list.filter((i: any) => selectedHeads.value.includes(i.head))
-  if (selectedUnits.value.length > 0) list = list.filter((i: any) => selectedUnits.value.includes(i.tail))
-  if (homeWildFilter.value !== 'all') { const key = homeWildFilter.value === 'home' ? '家禽' : '野兽'; const allowedIds = new Set(getOtherAttrIds(key)); list = list.filter((i: any) => allowedIds.has(i.id)) }
-  if (skyEarthFilter.value !== 'all') { const key = skyEarthFilter.value === 'sky' ? '天肖' : '地肖'; const allowedIds = new Set(getOtherAttrIds(key)); list = list.filter((i: any) => allowedIds.has(i.id)) }
-  if (selectedElementsFilter.value.length > 0) list = list.filter((i: any) => selectedElementsFilter.value.includes(i.wuxing.key))
-  if (selectedWaveColors.value.length > 0) list = list.filter((i: any) => selectedWaveColors.value.includes(i.wave.key))
-  if (selectedWaveOddEven.value.length > 0) list = list.filter((i: any) => selectedWaveOddEven.value.includes(`${i.wave.key}-${i.oddAndEven}` as WaveOddEven))
-  if (selectedZodiacsFilter.value.length > 0) list = list.filter((i: any) => selectedZodiacsFilter.value.includes(i.zodiac.key))
-  if (selectedMenFilter.value.length > 0) list = list.filter((i: any) => selectedMenFilter.value.includes(i.men))
-  if (selectedDuanFilter.value.length > 0) list = list.filter((i: any) => selectedDuanFilter.value.includes(i.duan))
-  if (selectedHeShuFilter.value.length > 0) { const allowedHeShu = selectedHeShuFilter.value.map(k => '合' + k.replace('合', '').padStart(2, '0')); list = list.filter((i: any) => allowedHeShu.includes(i.heShu)) }
-  return list
-})
 
 const STORAGE_KEY = 'num-chose-state'
 async function saveAndCopy() {
-  const payload = { selectedNumbers: selectedNumbers.value, selectedZodiacs: selectedZodiacs.value, oddEvenFilter: oddEvenFilter.value, sumOddEvenFilter: sumOddEvenFilter.value, selectedHeads: selectedHeads.value, selectedUnits: selectedUnits.value, homeWildFilter: homeWildFilter.value, skyEarthFilter: skyEarthFilter.value, selectedElementsFilter: selectedElementsFilter.value, selectedWaveColors: selectedWaveColors.value, selectedWaveOddEven: selectedWaveOddEven.value, selectedZodiacsFilter: selectedZodiacsFilter.value, selectedMenFilter: selectedMenFilter.value, selectedDuanFilter: selectedDuanFilter.value, selectedHeShuFilter: selectedHeShuFilter.value, stickySelected: stickySelected.value, resultsStickySelected: resultsStickySelected.value }
+  const payload = { selectedNumbers: selectedNumbers.value, selectedZodiacs: selectedZodiacs.value, stickySelected: stickySelected.value }
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(payload)) } catch {}
-  const text = filteredSelectedRecords.value.map((r: any) => pad2(Number(r.id))).join('.')
-  if (!text) { toast('暂无可复制的过滤结果'); return }
-  try { await navigator.clipboard.writeText(text); toast('已复制过滤结果,并保存') } catch {}
+  const text = selectedNumbers.value.map(pad2).join('.')
+  if (!text) { toast('暂无可复制的号码'); return }
+  try { await navigator.clipboard.writeText(text); toast('已复制号码,并保存') } catch {}
 }
 
 function deleteSaved() {
@@ -273,55 +269,13 @@ onMounted(() => {
 
 function getSortedNumbers() { const sorted = [...selectedNumbers.value]; sortOrder.value === 'asc' ? sorted.sort((a, b) => a - b) : sorted.sort((a, b) => b - a); return sorted }
 function getWaveColorById(id: number): string { return recordById.value.get(id)?.wave.key || '' }
-function clearSelectedNumbers() { selectedNumbers.value = []; sortOrder.value = 'none'; selectedConditionOptions.value = [] }
-
-// ═══ 拖拽批量选择 ═══
-const gridRef = ref<HTMLElement>()
-const isDragging = ref(false)
-const dragAction = ref<'add' | 'remove'>('add')
-let lastSelectId = -1
-let lastSelectTime = 0
+function clearSelectedNumbers() { selectedNumbers.value = []; manualNumbers.value = []; sortOrder.value = 'none'; clearAllConditions() }
 
 function handleSelect(id: number) {
-  // 防抖：防止 pointerdown + click 双重触发同一号码
-  const now = Date.now()
-  if (id === lastSelectId && now - lastSelectTime < 300) return
   if (typeof id !== 'number' || id < 1 || id > 49) return
-  lastSelectId = id
-  lastSelectTime = now
   const index = selectedNumbers.value.indexOf(id)
   index > -1 ? selectedNumbers.value.splice(index, 1) : selectedNumbers.value.push(id)
 }
-
-function onGridPointerDown(e: PointerEvent) {
-  // 通过 data-num-id 找到被点击的数字按钮
-  const btn = (e.target as HTMLElement).closest('[data-num-id]') as HTMLElement | null
-  if (!btn) return
-  const id = parseInt(btn.getAttribute('data-num-id')!, 10)
-  if (isNaN(id)) return
-
-  isDragging.value = true
-  dragAction.value = selectedNumbers.value.includes(id) ? 'remove' : 'add'
-  handleSelect(id)
-  gridRef.value?.setPointerCapture(e.pointerId)
-}
-
-function onGridPointerMove(e: PointerEvent) {
-  if (!isDragging.value) return
-
-  const el = document.elementFromPoint(e.clientX, e.clientY)
-  if (!el) return
-  const btn = (el as HTMLElement).closest('[data-num-id]') as HTMLElement | null
-  if (!btn) return
-  const id = parseInt(btn.getAttribute('data-num-id')!, 10)
-  if (isNaN(id)) return
-
-  const isSelected = selectedNumbers.value.includes(id)
-  if (dragAction.value === 'add' && !isSelected) handleSelect(id)
-  else if (dragAction.value === 'remove' && isSelected) handleSelect(id)
-}
-
-function onGridPointerUp() { isDragging.value = false }
 </script>
 
 <template>
@@ -422,14 +376,10 @@ function onGridPointerUp() { isDragging.value = false }
       </section>
 
       <!-- Number Grid -->
-      <section v-else-if="activeTab==='number'" class="u-section" style="touch-action:none;user-select:none" ref="gridRef" @pointerdown="onGridPointerDown" @pointermove="onGridPointerMove" @pointerup="onGridPointerUp" @pointercancel="onGridPointerUp">
+      <section v-else-if="activeTab==='number'" class="u-section">
         <div class="grid grid-cols-7 gap-1.5 justify-items-center">
-          <NumberButton v-for="number in filteredGridNumbers" :key="`num-${number.id}`" :data-num-id="number.id" :id="Number(number.id)" :active="selectedNumbers.includes(Number(number.id))" :wave-color="number.wave.key" :five-elements="number.wuxing.label" :chinese-zodiac="number.zodiac.label" :odd-and-even="number.oddAndEven==='odd'?'单':'双'" :sum-odd-and-even="number.sumOddAndEven==='odd'?'合单':'合双'" @select="handleSelect" />
+          <NumberButton v-for="number in filteredGridNumbers" :key="`num-${number.id}`" :id="Number(number.id)" :active="selectedNumbers.includes(Number(number.id))" :wave-color="number.wave.key" :five-elements="number.wuxing.label" :chinese-zodiac="number.zodiac.label" :odd-and-even="number.oddAndEven==='odd'?'单':'双'" :sum-odd-and-even="number.sumOddAndEven==='odd'?'合单':'合双'" @select="handleSelect" />
         </div>
-        <p class="flex items-center justify-center gap-1 mt-3 text-xs text-secondary">
-          <span class="icon-[tabler--info-circle] size-3.5"></span>
-          滑动可批量选择
-        </p>
       </section>
 
       <!-- Condition Selection -->
@@ -439,191 +389,106 @@ function onGridPointerUp() { isDragging.value = false }
           <button class="u-btn u-btn-ghost u-btn-sm" @click="clearAllConditions">清空条件</button>
         </div>
 
-        <section v-for="sec in conditionSections" :key="sec.name" class="filter-section">
-          <button type="button" class="section-header" @click="toggleConditionSection(sec.name)">
+        <!-- 包含分区 -->
+        <section class="filter-section filter-section--include">
+          <button type="button" class="section-header" @click="includeExpanded = !includeExpanded">
             <div class="flex items-center gap-2 min-w-0">
-              <span class="section-indicator"></span>
-              <h2 class="text-[13px] font-bold text-base-content truncate">{{ sec.name }}</h2>
-              <span v-if="countConditionIn(sec) > 0" class="section-count">{{ countConditionIn(sec) }}</span>
+              <span class="section-dot"></span>
+              <h2 class="section-title">包含</h2>
+              <span v-if="includeConditionOptions.length > 0" class="section-count">{{ includeConditionOptions.length }}</span>
             </div>
-            <span class="icon-[tabler--chevron-down] size-4 text-secondary transition-transform duration-200" :class="{ 'rotate-180': expandedConditionSections.includes(sec.name) }"></span>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <span class="section-tip">全部满足才保留</span>
+              <span class="icon-[tabler--chevron-down] size-4 text-secondary transition-transform duration-200" :class="{ 'rotate-180': includeExpanded }"></span>
+            </div>
           </button>
 
-          <div v-if="expandedConditionSections.includes(sec.name)" class="section-body">
-            <div v-for="g in sec.groups" :key="g.label" class="filter-block">
-              <div class="text-[10px] font-semibold text-secondary">{{ g.label }}</div>
-              <div class="flex flex-wrap gap-1.5">
-                <button v-for="opt in g.options" :key="opt" type="button" :class="conditionChipClass(g.type, opt, selectedConditionOptions.includes(opt))" @click="toggleConditionOption(opt)">{{ opt }}</button>
-              </div>
+          <div v-if="includeExpanded" class="section-body">
+            <div class="segment-tabs">
+              <button v-for="name in conditionGroupNames" :key="name" type="button" class="segment-tab" :class="{ 'is-active': includeGroupTab === name }" @click="includeGroupTab = name">{{ name }}</button>
             </div>
+            <template v-for="g in conditionSections.find(s => s.name === includeGroupTab)?.groups" :key="`inc-${g.label}`">
+              <div v-if="g.type === 'combined' && g.groups" class="filter-block filter-block--combined">
+                <template v-for="sub in g.groups" :key="`inc-${g.label}-${sub.label}`">
+                  <div class="filter-block__label">{{ sub.label }}</div>
+                  <div class="filter-block__opts">
+                    <button v-for="opt in sub.options" :key="opt" type="button" :class="conditionChipClass(sub.type, opt, includeConditionOptions.includes(opt))" @click="toggleIncludeOption(opt)">{{ opt }}</button>
+                  </div>
+                </template>
+              </div>
+              <div v-else class="filter-block">
+                <div class="filter-block__label">{{ g.label }}</div>
+                <div class="filter-block__opts">
+                  <button v-for="opt in g.options" :key="opt" type="button" :class="conditionChipClass(g.type, opt, includeConditionOptions.includes(opt))" @click="toggleIncludeOption(opt)">{{ opt }}</button>
+                </div>
+              </div>
+            </template>
           </div>
         </section>
-      </section>
 
-      <!-- Filters -->
-      <section class="u-section">
-        <div class="flex items-center justify-between">
-          <h3 class="text-sm font-semibold text-base-content flex items-center gap-1.5" @click="filtersExpanded = !filtersExpanded">
-            <span class="icon-[tabler--adjustments-horizontal] size-4 text-secondary"></span>
-            过滤条件
-            <span class="icon-[tabler--chevron-down] size-3.5 text-secondary transition-transform" :class="filtersExpanded ? 'rotate-180' : ''"></span>
-          </h3>
-          <button class="text-xs text-secondary hover:text-secondary transition-colors" @click="clearAllFilters">清空</button>
-        </div>
-
-        <div v-show="filtersExpanded" class="divide-y divide-base-200 mt-1">
-          <!-- 波色过滤 -->
-          <div class="flex items-start gap-3 py-3">
-            <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">波色</div>
-            <div class="flex flex-wrap gap-2 flex-1">
-              <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveColors.includes('red') ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveColor('red')">红波</button>
-              <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveColors.includes('green') ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveColor('green')">绿波</button>
-              <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveColors.includes('blue') ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveColor('blue')">蓝波</button>
+        <!-- 排除分区 -->
+        <section class="filter-section filter-section--exclude">
+          <button type="button" class="section-header" @click="excludeExpanded = !excludeExpanded">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="section-dot"></span>
+              <h2 class="section-title">排除</h2>
+              <span v-if="excludeConditionOptions.length > 0" class="section-count">{{ excludeConditionOptions.length }}</span>
             </div>
-          </div>
-
-          <!-- 单双过滤 -->
-          <div class="flex items-start gap-3 py-3">
-            <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">单双</div>
-            <div class="flex flex-wrap gap-2 flex-1">
-              <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="oddEvenFilter==='odd' ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="oddEvenFilter='odd'">单</button>
-              <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="oddEvenFilter==='even' ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="oddEvenFilter='even'">双</button>
-              <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="oddEvenFilter==='all' ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="oddEvenFilter='all'">全部</button>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <span class="section-tip">满足任一即排除</span>
+              <span class="icon-[tabler--chevron-down] size-4 text-secondary transition-transform duration-200" :class="{ 'rotate-180': excludeExpanded }"></span>
             </div>
-          </div>
+          </button>
 
-          <!-- 五行过滤 -->
-          <div class="flex items-start gap-3 py-3">
-            <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">五行</div>
-            <div class="flex flex-wrap gap-2 flex-1">
-              <button v-for="opt in elementOptions" :key="`fe-${opt.key}`" class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedElementsFilter.includes(opt.key) ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleElementFilter(opt.key)">{{ opt.label }}</button>
+          <div v-if="excludeExpanded" class="section-body">
+            <div class="segment-tabs">
+              <button v-for="name in conditionGroupNames" :key="name" type="button" class="segment-tab" :class="{ 'is-active': excludeGroupTab === name }" @click="excludeGroupTab = name">{{ name }}</button>
             </div>
+            <template v-for="g in conditionSections.find(s => s.name === excludeGroupTab)?.groups" :key="`exc-${g.label}`">
+              <div v-if="g.type === 'combined' && g.groups" class="filter-block filter-block--combined">
+                <template v-for="sub in g.groups" :key="`exc-${g.label}-${sub.label}`">
+                  <div class="filter-block__label">{{ sub.label }}</div>
+                  <div class="filter-block__opts">
+                    <button v-for="opt in sub.options" :key="opt" type="button" :class="conditionChipClass(sub.type, opt, excludeConditionOptions.includes(opt))" @click="toggleExcludeOption(opt)">{{ opt }}</button>
+                  </div>
+                </template>
+              </div>
+              <div v-else class="filter-block">
+                <div class="filter-block__label">{{ g.label }}</div>
+                <div class="filter-block__opts">
+                  <button v-for="opt in g.options" :key="opt" type="button" :class="conditionChipClass(g.type, opt, excludeConditionOptions.includes(opt))" @click="toggleExcludeOption(opt)">{{ opt }}</button>
+                </div>
+              </div>
+            </template>
           </div>
+        </section>
 
-          <!-- 生肖过滤 -->
-          <div class="flex items-start gap-3 py-3">
-            <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">生肖</div>
-            <div class="flex flex-wrap gap-2 flex-1">
-              <button v-for="opt in zodiacFilterOptions" :key="`zf-${opt.key}`" class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedZodiacsFilter.includes(opt.key) ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleZodiacFilter(opt.key)">{{ opt.name }}</button>
-              <button class="px-2 py-1 text-xs text-primary flex items-center gap-0.5" @click="zodiacFilterExpanded = !zodiacFilterExpanded">
-                {{ zodiacFilterExpanded ? '收起' : '更多' }}
-                <span class="icon-[tabler--chevron-down] size-3 transition-transform" :class="zodiacFilterExpanded ? 'rotate-180' : ''"></span>
+        <!-- 命中结果反馈 -->
+        <section class="filter-section filter-section--result">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="section-dot"></span>
+              <h2 class="section-title">命中结果</h2>
+              <span class="section-count" :class="conditionHitNumbers.length > 0 ? 'is-hit' : ''">{{ conditionHitNumbers.length }}注</span>
+            </div>
+            <div class="flex items-center gap-3 shrink-0">
+              <button type="button" class="result-btn" @click="copyConditionHit">
+                <span class="icon-[tabler--copy] size-3.5"></span>复制
+              </button>
+              <button type="button" class="result-btn" @click="activeTab = 'number'">
+                <span class="icon-[tabler--apps] size-3.5"></span>去数字选号
               </button>
             </div>
           </div>
 
-          <!-- 合数过滤 -->
-          <div class="flex items-start gap-3 py-3">
-            <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">合数</div>
-            <div class="flex flex-wrap gap-2 flex-1">
-              <button v-for="n in [1,2,3,4,5,6,7,8,9,10,11,12,13]" :key="`he-${n}`" class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedHeShuFilter.includes(`${n}合`) ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleHeShuFilter(`${n}合`)">{{ n }}合</button>
-            </div>
+          <div v-if="conditionHitNumbers.length === 0" class="result-empty">
+            未选择任何条件，暂无命中号码
           </div>
-
-          <!-- 更多筛选 -->
-          <div class="pt-3">
-            <button class="w-full flex items-center justify-center gap-1 py-2 text-xs text-primary border border-dashed border-base-300 rounded-lg" @click="moreFiltersExpanded = !moreFiltersExpanded">
-              {{ moreFiltersExpanded ? '收起更多筛选' : '展开更多筛选' }}
-              <span class="icon-[tabler--chevron-down] size-3.5 transition-transform" :class="moreFiltersExpanded ? 'rotate-180' : ''"></span>
-            </button>
+          <div v-else class="result-numbers">
+            <span v-for="n in conditionHitPreview" :key="`hit-${n}`" class="result-num" :class="waveHitClass(n)">{{ pad2(n) }}</span>
+            <span v-if="conditionHitNumbers.length > conditionHitPreview.length" class="result-more">+{{ conditionHitNumbers.length - conditionHitPreview.length }}</span>
           </div>
-
-          <div v-show="moreFiltersExpanded" class="divide-y divide-base-200">
-            <!-- 合单双过滤 -->
-            <div class="flex items-start gap-3 py-3">
-              <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">合单双</div>
-              <div class="flex flex-wrap gap-2 flex-1">
-                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="sumOddEvenFilter==='oddSum' ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="sumOddEvenFilter='oddSum'">合单</button>
-                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="sumOddEvenFilter==='evenSum' ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="sumOddEvenFilter='evenSum'">合双</button>
-                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="sumOddEvenFilter==='all' ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="sumOddEvenFilter='all'">全部</button>
-              </div>
-            </div>
-
-            <!-- 波色单双 -->
-            <div class="flex items-start gap-3 py-3">
-              <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">波色单双</div>
-              <div class="flex flex-wrap gap-2 flex-1">
-                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveOddEven.includes('red-odd') ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveOddEven('red-odd')">红单</button>
-                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveOddEven.includes('red-even') ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveOddEven('red-even')">红双</button>
-                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveOddEven.includes('green-odd') ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveOddEven('green-odd')">绿单</button>
-                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveOddEven.includes('green-even') ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveOddEven('green-even')">绿双</button>
-                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveOddEven.includes('blue-odd') ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveOddEven('blue-odd')">蓝单</button>
-                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedWaveOddEven.includes('blue-even') ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleWaveOddEven('blue-even')">蓝双</button>
-              </div>
-            </div>
-
-            <!-- 天地肖过滤 -->
-            <div class="flex items-start gap-3 py-3">
-              <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">天地肖</div>
-              <div class="flex flex-wrap gap-2 flex-1">
-                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="skyEarthFilter==='sky' ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="skyEarthFilter='sky'">天肖</button>
-                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="skyEarthFilter==='earth' ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="skyEarthFilter='earth'">地肖</button>
-                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="skyEarthFilter==='all' ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="skyEarthFilter='all'">全部</button>
-              </div>
-            </div>
-
-            <!-- 家/野肖过滤 -->
-            <div class="flex items-start gap-3 py-3">
-              <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">家野肖</div>
-              <div class="flex flex-wrap gap-2 flex-1">
-                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="homeWildFilter==='home' ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="homeWildFilter='home'">家肖</button>
-                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="homeWildFilter==='wild' ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="homeWildFilter='wild'">野肖</button>
-                <button class="px-3 py-1 rounded-full text-xs border transition-colors" :class="homeWildFilter==='all' ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="homeWildFilter='all'">全部</button>
-              </div>
-            </div>
-
-            <!-- 门数过滤 -->
-            <div class="flex items-start gap-3 py-3">
-              <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">门数</div>
-              <div class="flex flex-wrap gap-2 flex-1">
-                <button v-for="n in [1,2,3,4,5]" :key="`men-${n}`" class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedMenFilter.includes(`${n}门`) ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleMenFilter(`${n}门`)">{{ n }}门</button>
-              </div>
-            </div>
-
-            <!-- 段数过滤 -->
-            <div class="flex items-start gap-3 py-3">
-              <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">段数</div>
-              <div class="flex flex-wrap gap-2 flex-1">
-                <button v-for="n in [1,2,3,4,5,6,7]" :key="`duan-${n}`" class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedDuanFilter.includes(`${n}段`) ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleDuanFilter(`${n}段`)">{{ n }}段</button>
-              </div>
-            </div>
-
-            <!-- 头数过滤 -->
-            <div class="flex items-start gap-3 py-3">
-              <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">头数</div>
-              <div class="flex flex-wrap gap-2 flex-1">
-                <button v-for="h in availableHeads" :key="`head-${h}`" class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedHeads.includes(h) ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleHead(h)">{{ h }}头</button>
-              </div>
-            </div>
-
-            <!-- 位数过滤 -->
-            <div class="flex items-start gap-3 py-3">
-              <div class="shrink-0 text-xs text-secondary pt-1.5 w-[3.5rem]">尾数</div>
-              <div class="flex flex-wrap gap-2 flex-1">
-                <button v-for="u in availableUnits" :key="`unit-${u}`" class="px-3 py-1 rounded-full text-xs border transition-colors" :class="selectedUnits.includes(u) ? 'bg-primary text-primary-content border-primary' : 'bg-base-100 text-secondary border-base-300 hover:border-base-300'" @click="toggleUnit(u)">{{ u }}尾</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Filter Results -->
-      <section class="u-section">
-        <div class="flex items-center justify-between cursor-pointer" @click="resultsExpanded = !resultsExpanded">
-          <h3 class="text-sm font-semibold text-base-content">
-            当前过滤结果 <span class="text-xs font-normal text-secondary">{{ filteredSelectedRecords.length }}注</span>
-          </h3>
-          <button class="text-xs text-secondary flex items-center gap-0.5">
-            {{ resultsExpanded ? '收起' : '展开' }}
-            <span class="icon-[tabler--chevron-down] size-3.5 transition-transform" :class="resultsExpanded ? 'rotate-180' : ''"></span>
-          </button>
-        </div>
-        <div v-if="resultsExpanded">
-          <div v-if="filteredSelectedRecords.length===0" class="text-sm text-secondary mt-3">暂无过滤结果</div>
-          <div v-else class="flex flex-wrap gap-2 mt-3">
-            <NumberButton v-for="rec in filteredSelectedRecords" :key="`sel-${rec.id}`" :id="Number(rec.id)" :active="selectedNumbers.includes(Number(rec.id))" :wave-color="rec.wave.key" :five-elements="rec.wuxing.label" :chinese-zodiac="rec.zodiac.label" :odd-and-even="rec.oddAndEven==='odd'?'单':'双'" :sum-odd-and-even="rec.sumOddAndEven==='odd'?'合单':'合双'" @select="handleSelect" />
-          </div>
-        </div>
+        </section>
       </section>
 
       <!-- Save Bar -->
@@ -692,68 +557,221 @@ function onGridPointerUp() { isDragging.value = false }
 </template>
 
 <style scoped>
-/* ═══ 分区卡片（对齐 filter-numbers） ═══ */
+/* ═══ 条件选号分区（包含/排除/命中结果） ═══ */
 .filter-section {
   background: var(--color-base-100);
-  border-radius: 12px;
+  border-radius: 14px;
   border: 1px solid var(--color-base-300);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   overflow: hidden;
 }
+.filter-section--include { border-top: 3px solid var(--color-success); }
+.filter-section--exclude { border-top: 3px solid var(--color-error); }
+.filter-section--result { border-top: 3px solid var(--color-primary); padding: 11px 12px 12px; display: flex; flex-direction: column; gap: 10px; }
+
+.result-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 26px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+.result-btn:active { filter: brightness(0.92); }
+
+.result-empty {
+  font-size: 12px;
+  color: var(--color-secondary);
+  background: color-mix(in srgb, var(--color-base-200) 55%, transparent);
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+}
+
+.result-numbers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 132px;
+  overflow-y: auto;
+}
+
+.result-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid;
+  flex-shrink: 0;
+}
+
+.result-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  padding: 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-secondary);
+}
+
+.filter-section--include .section-header { background: color-mix(in srgb, var(--color-success) 5%, transparent); }
+.filter-section--exclude .section-header { background: color-mix(in srgb, var(--color-error) 5%, transparent); }
 
 .section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 10px 12px;
+  padding: 11px 12px;
   cursor: pointer;
   border: none;
-  background: transparent;
   color: inherit;
   gap: 8px;
+  transition: filter 0.15s ease;
+}
+.section-header:active { filter: brightness(0.97); }
+
+.section-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.filter-section--include .section-dot {
+  background: var(--color-success);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-success) 16%, transparent);
+}
+.filter-section--exclude .section-dot {
+  background: var(--color-error);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-error) 16%, transparent);
 }
 
-.section-indicator {
-  width: 3px;
-  height: 14px;
-  background: var(--color-primary);
-  border-radius: 999px;
-  flex-shrink: 0;
+.section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-base-content);
 }
 
 .section-count {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 18px;
-  height: 16px;
-  padding: 0 5px;
+  min-width: 20px;
+  height: 17px;
+  padding: 0 6px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--color-primary) 18%, transparent);
-  color: var(--color-primary);
   font-size: 10px;
   font-weight: 700;
   line-height: 1;
 }
+.filter-section--include .section-count {
+  background: color-mix(in srgb, var(--color-success) 16%, transparent);
+  color: var(--color-success);
+}
+.filter-section--exclude .section-count {
+  background: color-mix(in srgb, var(--color-error) 16%, transparent);
+  color: var(--color-error);
+}
+.filter-section--result .section-count {
+  background: color-mix(in srgb, var(--color-base-300) 60%, transparent);
+  color: var(--color-secondary);
+}
+.filter-section--result .section-count.is-hit {
+  background: color-mix(in srgb, var(--color-primary) 16%, transparent);
+  color: var(--color-primary);
+}
+
+.section-tip {
+  font-size: 10px;
+  color: var(--color-secondary);
+  white-space: nowrap;
+}
 
 .section-body {
-  padding: 0 12px 12px;
+  padding: 10px 12px 12px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
+  border-top: 1px dashed var(--color-base-300);
+}
+
+.segment-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--color-base-300) 45%, transparent);
+}
+
+.segment-tab {
+  flex: 1;
+  height: 30px;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-secondary);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.segment-tab.is-active {
+  background: var(--color-base-100);
+  color: var(--color-base-content);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .filter-block {
+  background: color-mix(in srgb, var(--color-base-200) 55%, transparent);
+  border-radius: 10px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 8px;
+  min-width: 0;
+}
+
+.filter-block__label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.filter-block__opts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* 组合卡片（属性：单双大小/波色单双/五行） */
+.filter-block--combined > :not(:last-child) {
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed color-mix(in srgb, var(--color-base-300) 80%, transparent);
 }
 
 /* ═══ 波色按钮（大色块，按波色着色） ═══ */
 .chip-wave {
   position: relative;
   height: 34px;
+  padding: 0 12px;
   border-radius: 10px;
   font-size: 12px;
   font-weight: 600;
@@ -807,8 +825,9 @@ function onGridPointerUp() { isDragging.value = false }
 /* ═══ 五行 ═══ */
 .chip-wuxing {
   position: relative;
-  height: 30px;
-  border-radius: 8px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 10px;
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
@@ -833,8 +852,9 @@ function onGridPointerUp() { isDragging.value = false }
 /* ═══ 生肖 ═══ */
 .chip-zodiac {
   position: relative;
-  height: 32px;
-  border-radius: 8px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 10px;
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
@@ -860,10 +880,10 @@ function onGridPointerUp() { isDragging.value = false }
 
 /* ═══ 标签芯片（药丸） ═══ */
 .chip-tag {
-  height: 28px;
-  padding: 0 10px;
+  height: 34px;
+  padding: 0 12px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s;
@@ -885,38 +905,13 @@ function onGridPointerUp() { isDragging.value = false }
   box-shadow: 0 2px 8px color-mix(in srgb, var(--color-primary) 45%, transparent), inset 0 0 0 2px color-mix(in srgb, var(--color-primary) 50%, #000);
 }
 .chip-tag--active:hover { filter: brightness(1.08); }
-/* 标签芯片波色变体：未选中时按波色着色，选中时实色填充 */
-.chip-tag.cwc--red:not(.chip-tag--active) { color: var(--color-error); }
-.chip-tag.cwc--green:not(.chip-tag--active) { color: var(--color-success); }
-.chip-tag.cwc--blue:not(.chip-tag--active) { color: var(--color-info); }
-
-.chip-tag.cwc--red.chip-tag--active {
-  background: var(--color-error);
-  border-color: var(--color-error);
-  color: var(--color-error-content);
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-error) 45%, transparent), inset 0 0 0 2px color-mix(in srgb, var(--color-error) 50%, #000);
-}
-.chip-tag.cwc--red.chip-tag--active:hover { filter: brightness(1.08); }
-.chip-tag.cwc--green.chip-tag--active {
-  background: var(--color-success);
-  border-color: var(--color-success);
-  color: var(--color-success-content);
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-success) 45%, transparent), inset 0 0 0 2px color-mix(in srgb, var(--color-success) 50%, #000);
-}
-.chip-tag.cwc--green.chip-tag--active:hover { filter: brightness(1.08); }
-.chip-tag.cwc--blue.chip-tag--active {
-  background: var(--color-info);
-  border-color: var(--color-info);
-  color: var(--color-info-content);
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-info) 45%, transparent), inset 0 0 0 2px color-mix(in srgb, var(--color-info) 50%, #000);
-}
-.chip-tag.cwc--blue.chip-tag--active:hover { filter: brightness(1.08); }
 
 /* ═══ 头数 / 尾数 ═══ */
 .chip-tail {
   position: relative;
-  height: 30px;
-  border-radius: 8px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 10px;
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
