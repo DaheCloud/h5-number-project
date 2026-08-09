@@ -92,29 +92,85 @@ const zodiacOptionsSorted = computed(() => {
 const zodiacCardOrderMode = ref<'zodiac' | 'number'>('number')
 const zodiacCardList = computed(() => zodiacCardOrderMode.value === 'number' ? zodiacOptionsSorted.value : zodiacOptions)
 
-// 条件过滤配置
-const conditionGroups: { label: string; options: string[] }[] = [
-  { label: '合单双', options: ['合单', '合双'] },
-  { label: '五行', options: ['金', '木', '水', '火', '土'] },
-  { label: '波色单双', options: ['红单', '红双', '绿单', '绿双', '蓝单', '蓝双'] },
-  { label: '生肖', options: ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪'] },
-  { label: '门数', options: ['1门', '2门', '3门', '4门', '5门'] },
-  { label: '段数', options: ['1段', '2段', '3段', '4段', '5段', '6段', '7段'] },
-  { label: '合数', options: ['1合', '2合', '3合', '4合', '5合', '6合', '7合', '8合', '9合', '10合', '11合', '12合', '13合'] },
-  { label: '头数', options: ['0头', '1头', '2头', '3头', '4头'] },
-  { label: '尾数', options: ['0尾', '1尾', '2尾', '3尾', '4尾', '5尾', '6尾', '7尾', '8尾', '9尾', '大尾', '小尾'] },
-  { label: '头单双', options: ['0头单', '1头单', '2头单', '3头单', '4头单', '0头双', '1头双', '2头双', '3头双', '4头双'] },
-  { label: '合尾', options: ['0合尾', '1合尾', '2合尾', '3合尾', '4合尾', '5合尾', '6合尾', '7合尾', '8合尾', '9合尾'] },
-  { label: '天肖组合', options: ['天肖', '左肖', '前肖', '阴肖', '家肖'] },
-  { label: '地肖组合', options: ['地肖', '右肖', '后肖', '阳肖', '野肖'] },
+// 条件选号配置（与 filter-numbers 过滤条件对齐：基础属性/生肖联动/头尾/合数门段）
+type ConditionChipType = 'wave' | 'wuxing' | 'zodiac' | 'tag' | 'tail'
+interface ConditionGroup { label: string; type: ConditionChipType; options: string[] }
+interface ConditionSection { name: string; groups: ConditionGroup[] }
+
+const conditionSections: ConditionSection[] = [
+  { name: '基础属性', groups: [
+    { label: '单双大小', type: 'tag', options: ['单', '双', '大', '小'] },
+    { label: '波色', type: 'wave', options: ['红波', '绿波', '蓝波'] },
+    { label: '五行', type: 'wuxing', options: ['金', '木', '水', '火', '土'] },
+  ]},
+  { name: '生肖与联动', groups: [
+    { label: '生肖', type: 'zodiac', options: ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪'] },
+    { label: '家禽野兽', type: 'tag', options: ['家禽', '野兽'] },
+    { label: '男/女肖', type: 'tag', options: ['男肖', '女肖'] },
+    { label: '肉/菜/草肖', type: 'tag', options: ['肉肖', '菜肖', '草肖'] },
+    { label: '前/后/左/右肖', type: 'tag', options: ['前肖', '后肖', '左肖', '右肖'] },
+    { label: '阴/阳肖', type: 'tag', options: ['阴肖', '阳肖'] },
+    { label: '波色单双', type: 'tag', options: ['红单', '红双', '绿单', '绿双', '蓝单', '蓝双'] },
+    { label: '季节', type: 'tag', options: ['春', '夏', '秋', '冬'] },
+    { label: '天气', type: 'tag', options: ['风', '雨', '雷', '电'] },
+    { label: '琴棋书画', type: 'tag', options: ['琴', '棋', '书', '画'] },
+  ]},
+  { name: '头数与尾数', groups: [
+    { label: '头数', type: 'tail', options: ['0头', '1头', '2头', '3头', '4头'] },
+    { label: '尾数', type: 'tail', options: ['0尾', '1尾', '2尾', '3尾', '4尾', '5尾', '6尾', '7尾', '8尾', '9尾'] },
+  ]},
+  { name: '合数与门段', groups: [
+    { label: '合单双', type: 'tag', options: ['合单', '合双'] },
+    { label: '合大小', type: 'tag', options: ['合大', '合小'] },
+    { label: '尾大小', type: 'tag', options: ['尾大', '尾小'] },
+    { label: '大小单双', type: 'tag', options: ['大单', '小单', '大双', '小双'] },
+    { label: '门数', type: 'tag', options: ['1门', '2门', '3门', '4门', '5门'] },
+    { label: '段数', type: 'tag', options: ['1段', '2段', '3段', '4段', '5段', '6段', '7段'] },
+    { label: '合数', type: 'tag', options: ['1合', '2合', '3合', '4合', '5合', '6合', '7合', '8合', '9合', '10合', '11合', '12合', '13合'] },
+  ]},
 ]
+
+// 分区折叠状态（默认全部展开）
+const expandedConditionSections = ref<string[]>(conditionSections.map(s => s.name))
+function toggleConditionSection(name: string) {
+  const i = expandedConditionSections.value.indexOf(name)
+  i > -1 ? expandedConditionSections.value.splice(i, 1) : expandedConditionSections.value.push(name)
+}
+function countConditionIn(sec: ConditionSection): number {
+  const allOpts = sec.groups.flatMap(g => g.options)
+  return allOpts.filter(o => selectedConditionOptions.value.includes(o)).length
+}
+// 波色样式辅助（与 filter-numbers 一致：未选中按波色着色，选中实色填充）
+function waveClass(label: string): string {
+  if (label === '红波') return 'chip-wave--red'
+  if (label === '绿波') return 'chip-wave--green'
+  if (label === '蓝波') return 'chip-wave--blue'
+  return ''
+}
+function waveComboClass(label: string): string {
+  if (label.startsWith('红')) return 'cwc--red'
+  if (label.startsWith('绿')) return 'cwc--green'
+  if (label.startsWith('蓝')) return 'cwc--blue'
+  return ''
+}
+// 按 chip 类型拼装 class
+function conditionChipClass(type: ConditionChipType, opt: string, active: boolean): string {
+  switch (type) {
+    case 'wave': return `chip-wave ${waveClass(opt)} ${active ? 'chip-wave--active' : ''}`
+    case 'wuxing': return `chip-wuxing ${active ? 'chip-wuxing--active' : ''}`
+    case 'zodiac': return `chip-zodiac ${active ? 'chip-zodiac--active' : ''}`
+    case 'tail': return `chip-tail ${active ? 'chip-tail--active' : ''}`
+    default: return `chip-tag ${waveComboClass(opt)} ${active ? 'chip-tag--active' : ''}`
+  }
+}
 const selectedConditionOptions = ref<string[]>([])
 function toggleConditionOption(opt: string) { const i = selectedConditionOptions.value.indexOf(opt); i > -1 ? selectedConditionOptions.value.splice(i, 1) : selectedConditionOptions.value.push(opt) }
 function clearAllConditions() { selectedConditionOptions.value = [] }
 
 const conditionResultNumbers = computed(() => {
+  const allGroups = conditionSections.flatMap(s => s.groups)
   const sets: Set<number>[] = []
-  for (const g of conditionGroups) {
+  for (const g of allGroups) {
     const sel = selectedConditionOptions.value.filter(o => g.options.includes(o))
     if (sel.length > 0) { const u = new Set<number>(); for (const o of sel) for (const n of getFilterIds(o)) u.add(n); sets.push(u) }
   }
@@ -377,17 +433,31 @@ function onGridPointerUp() { isDragging.value = false }
       </section>
 
       <!-- Condition Selection -->
-      <section v-else-if="activeTab==='condition'" class="u-section">
-        <div class="flex items-center justify-between">
+      <section v-else-if="activeTab==='condition'" class="space-y-2.5">
+        <div class="flex items-center justify-between px-1">
           <h3 class="text-base font-semibold text-neutral">条件选号</h3>
           <button class="u-btn u-btn-ghost u-btn-sm" @click="clearAllConditions">清空条件</button>
         </div>
-        <div v-for="group in conditionGroups" :key="group.label" class="mt-3">
-          <p class="text-xs text-secondary mb-2">{{ group.label }}</p>
-          <div class="flex flex-wrap gap-2">
-            <button v-for="opt in group.options" :key="opt" type="button" class="u-chip" :class="selectedConditionOptions.includes(opt)?'is-active':''" @click="toggleConditionOption(opt)">{{ opt }}</button>
+
+        <section v-for="sec in conditionSections" :key="sec.name" class="filter-section">
+          <button type="button" class="section-header" @click="toggleConditionSection(sec.name)">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="section-indicator"></span>
+              <h2 class="text-[13px] font-bold text-base-content truncate">{{ sec.name }}</h2>
+              <span v-if="countConditionIn(sec) > 0" class="section-count">{{ countConditionIn(sec) }}</span>
+            </div>
+            <span class="icon-[tabler--chevron-down] size-4 text-secondary transition-transform duration-200" :class="{ 'rotate-180': expandedConditionSections.includes(sec.name) }"></span>
+          </button>
+
+          <div v-if="expandedConditionSections.includes(sec.name)" class="section-body">
+            <div v-for="g in sec.groups" :key="g.label" class="filter-block">
+              <div class="text-[10px] font-semibold text-secondary">{{ g.label }}</div>
+              <div class="flex flex-wrap gap-1.5">
+                <button v-for="opt in g.options" :key="opt" type="button" :class="conditionChipClass(g.type, opt, selectedConditionOptions.includes(opt))" @click="toggleConditionOption(opt)">{{ opt }}</button>
+              </div>
+            </div>
           </div>
-        </div>
+        </section>
       </section>
 
       <!-- Filters -->
@@ -620,3 +690,267 @@ function onGridPointerUp() { isDragging.value = false }
     </div>
   </div>
 </template>
+
+<style scoped>
+/* ═══ 分区卡片（对齐 filter-numbers） ═══ */
+.filter-section {
+  background: var(--color-base-100);
+  border-radius: 12px;
+  border: 1px solid var(--color-base-300);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 12px;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: inherit;
+  gap: 8px;
+}
+
+.section-indicator {
+  width: 3px;
+  height: 14px;
+  background: var(--color-primary);
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.section-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 16px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-primary) 18%, transparent);
+  color: var(--color-primary);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.section-body {
+  padding: 0 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.filter-block {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+/* ═══ 波色按钮（大色块，按波色着色） ═══ */
+.chip-wave {
+  position: relative;
+  height: 34px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  background: var(--color-base-200);
+  color: var(--color-secondary);
+  border: 1px solid var(--color-base-300);
+  overflow: hidden;
+}
+.chip-wave:active { transform: scale(0.96); }
+
+.chip-wave--red {
+  color: var(--color-error);
+  border-color: color-mix(in srgb, var(--color-error) 35%, transparent);
+  background: color-mix(in srgb, var(--color-error) 8%, transparent);
+}
+.chip-wave--green {
+  color: var(--color-success);
+  border-color: color-mix(in srgb, var(--color-success) 35%, transparent);
+  background: color-mix(in srgb, var(--color-success) 8%, transparent);
+}
+.chip-wave--blue {
+  color: var(--color-info);
+  border-color: color-mix(in srgb, var(--color-info) 35%, transparent);
+  background: color-mix(in srgb, var(--color-info) 8%, transparent);
+}
+
+.chip-wave--active.chip-wave--red {
+  background: var(--color-error);
+  border-color: var(--color-error);
+  color: var(--color-error-content);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--color-error) 55%, transparent), inset 0 0 0 2px color-mix(in srgb, var(--color-error) 50%, #000);
+}
+.chip-wave--active.chip-wave--red:hover { filter: brightness(1.08); }
+.chip-wave--active.chip-wave--green {
+  background: var(--color-success);
+  border-color: var(--color-success);
+  color: var(--color-success-content);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--color-success) 55%, transparent), inset 0 0 0 2px color-mix(in srgb, var(--color-success) 50%, #000);
+}
+.chip-wave--active.chip-wave--green:hover { filter: brightness(1.08); }
+.chip-wave--active.chip-wave--blue {
+  background: var(--color-info);
+  border-color: var(--color-info);
+  color: var(--color-info-content);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--color-info) 55%, transparent), inset 0 0 0 2px color-mix(in srgb, var(--color-info) 50%, #000);
+}
+.chip-wave--active.chip-wave--blue:hover { filter: brightness(1.08); }
+
+/* ═══ 五行 ═══ */
+.chip-wuxing {
+  position: relative;
+  height: 30px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: var(--color-base-200);
+  color: var(--color-secondary);
+  border: none;
+}
+.chip-wuxing:active { transform: scale(0.96); }
+.chip-wuxing:not(.chip-wuxing--active):hover {
+  background: var(--color-base-300);
+  color: var(--color-base-content);
+}
+.chip-wuxing--active {
+  background: var(--color-primary);
+  color: var(--color-primary-content);
+  font-weight: 700;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-primary) 45%, transparent), inset 0 0 0 2px color-mix(in srgb, var(--color-primary) 50%, #000);
+}
+.chip-wuxing--active:hover { filter: brightness(1.08); }
+
+/* ═══ 生肖 ═══ */
+.chip-zodiac {
+  position: relative;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: var(--color-base-200);
+  color: var(--color-secondary);
+  border: 1px solid transparent;
+}
+.chip-zodiac:active { transform: scale(0.96); }
+.chip-zodiac:not(.chip-zodiac--active):hover { background: var(--color-base-300); }
+.chip-zodiac--active {
+  background: var(--color-primary);
+  color: var(--color-primary-content);
+  border-color: var(--color-primary);
+  font-weight: 700;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-primary) 45%, transparent), inset 0 0 0 2px color-mix(in srgb, var(--color-primary) 50%, #000);
+}
+.chip-zodiac--active:hover {
+  background: var(--color-primary);
+  color: var(--color-primary-content);
+  filter: brightness(1.08);
+}
+
+/* ═══ 标签芯片（药丸） ═══ */
+.chip-tag {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: var(--color-base-200);
+  color: var(--color-secondary);
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.chip-tag:active { transform: scale(0.96); }
+.chip-tag:not(.chip-tag--active):hover {
+  background: var(--color-base-300);
+  color: var(--color-base-content);
+}
+.chip-tag--active {
+  background: var(--color-primary);
+  color: var(--color-primary-content);
+  font-weight: 700;
+  border-color: var(--color-primary);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-primary) 45%, transparent), inset 0 0 0 2px color-mix(in srgb, var(--color-primary) 50%, #000);
+}
+.chip-tag--active:hover { filter: brightness(1.08); }
+/* 标签芯片波色变体：未选中时按波色着色，选中时实色填充 */
+.chip-tag.cwc--red:not(.chip-tag--active) { color: var(--color-error); }
+.chip-tag.cwc--green:not(.chip-tag--active) { color: var(--color-success); }
+.chip-tag.cwc--blue:not(.chip-tag--active) { color: var(--color-info); }
+
+.chip-tag.cwc--red.chip-tag--active {
+  background: var(--color-error);
+  border-color: var(--color-error);
+  color: var(--color-error-content);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-error) 45%, transparent), inset 0 0 0 2px color-mix(in srgb, var(--color-error) 50%, #000);
+}
+.chip-tag.cwc--red.chip-tag--active:hover { filter: brightness(1.08); }
+.chip-tag.cwc--green.chip-tag--active {
+  background: var(--color-success);
+  border-color: var(--color-success);
+  color: var(--color-success-content);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-success) 45%, transparent), inset 0 0 0 2px color-mix(in srgb, var(--color-success) 50%, #000);
+}
+.chip-tag.cwc--green.chip-tag--active:hover { filter: brightness(1.08); }
+.chip-tag.cwc--blue.chip-tag--active {
+  background: var(--color-info);
+  border-color: var(--color-info);
+  color: var(--color-info-content);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-info) 45%, transparent), inset 0 0 0 2px color-mix(in srgb, var(--color-info) 50%, #000);
+}
+.chip-tag.cwc--blue.chip-tag--active:hover { filter: brightness(1.08); }
+
+/* ═══ 头数 / 尾数 ═══ */
+.chip-tail {
+  position: relative;
+  height: 30px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: var(--color-base-200);
+  color: var(--color-secondary);
+  border: none;
+}
+.chip-tail:active { transform: scale(0.96); }
+.chip-tail:not(.chip-tail--active):hover {
+  background: var(--color-base-300);
+  color: var(--color-base-content);
+}
+.chip-tail--active {
+  background: var(--color-primary);
+  color: var(--color-primary-content);
+  font-weight: 700;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-primary) 45%, transparent), inset 0 0 0 2px color-mix(in srgb, var(--color-primary) 50%, #000);
+}
+.chip-tail--active:hover { filter: brightness(1.08); }
+
+/* ═══ 选中态勾选角标 ═══ */
+.chip-wave--active::after,
+.chip-wuxing--active::after,
+.chip-zodiac--active::after,
+.chip-tail--active::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.6;
+}
+</style>

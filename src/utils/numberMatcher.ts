@@ -173,6 +173,28 @@ export function getFilterIds(option: string): number[] {
   const allIds = getAllIds()
   const numbers = getAllNumbers()
 
+  // 单双
+  if (option === '单') return numbers.filter(n => n.oddAndEven === 'odd').map(n => n.id)
+  if (option === '双') return numbers.filter(n => n.oddAndEven === 'even').map(n => n.id)
+  // 大小（>=25 为大，<=24 为小）
+  if (option === '大') return allIds.filter(n => n >= 25)
+  if (option === '小') return allIds.filter(n => n <= 24)
+  // 波色
+  if (option === '红波') return numbers.filter(n => n.wave.key === 'red').map(n => n.id)
+  if (option === '绿波') return numbers.filter(n => n.wave.key === 'green').map(n => n.id)
+  if (option === '蓝波') return numbers.filter(n => n.wave.key === 'blue').map(n => n.id)
+  // 合大小（合数 >=7 为大，<=6 为小）
+  if (option === '合大') return allIds.filter(n => sumDigits(n) >= 7)
+  if (option === '合小') return allIds.filter(n => sumDigits(n) <= 6)
+  // 尾大小（尾数 >=5 为大，<=4 为小）
+  if (option === '尾大') return allIds.filter(n => n % 10 >= 5)
+  if (option === '尾小') return allIds.filter(n => n % 10 <= 4)
+  // 大小单双组合
+  if (option === '大单') return allIds.filter(n => n >= 25 && n % 2 === 1)
+  if (option === '小单') return allIds.filter(n => n <= 24 && n % 2 === 1)
+  if (option === '大双') return allIds.filter(n => n >= 25 && n % 2 === 0)
+  if (option === '小双') return allIds.filter(n => n <= 24 && n % 2 === 0)
+
   // 五行
   if (option in ZH_TO_ELEMENT) {
     return numbers.filter(n => n.wuxing.key === ZH_TO_ELEMENT[option]).map(n => n.id)
