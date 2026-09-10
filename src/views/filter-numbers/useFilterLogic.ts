@@ -16,9 +16,6 @@ export function useFilterLogic() {
   const selectedFilters = ref<string[]>([])
   const excludedFilters = ref<string[]>([])
   const excludedNumbers = ref<string[]>([])
-  const searchText = ref('')
-  const searchType = ref<'exact' | 'fuzzy' | 'regex'>('fuzzy')
-  const sortType = ref<'asc' | 'desc'>('asc')
 
   const getWaveColorById = (id: number): string => {
     const number = allNumbers.value.find((num) => num.id === id)
@@ -58,7 +55,7 @@ export function useFilterLogic() {
   })
 
   const filteredNumbers = computed(() => {
-    if (selectedFilters.value.length === 0 && !searchText.value && excludedFilters.value.length === 0) {
+    if (selectedFilters.value.length === 0 && excludedFilters.value.length === 0) {
       return []
     }
 
@@ -89,37 +86,12 @@ export function useFilterLogic() {
       })
     }
 
-    // 搜索
-    if (searchText.value) {
-      const query = searchText.value.trim()
-      if (searchType.value === 'exact') {
-        result = result.filter(n => n.id.toString() === query || n.id.toString().padStart(3, '0') === query)
-      } else if (searchType.value === 'fuzzy') {
-        result = result.filter(n => n.id.toString().includes(query))
-      } else if (searchType.value === 'regex') {
-        try {
-          const regex = new RegExp(query)
-          result = result.filter(n => regex.test(n.id.toString()))
-        } catch {
-          return []
-        }
-      }
-    }
-
     // 手动排除
     if (excludedNumbers.value.length > 0) {
       result = result.filter(n => !excludedNumbers.value.includes(n.id.toString().padStart(2, '0')))
     }
 
-    // 排序
-    result = [...result].sort((a, b) => {
-      const valA = a.id.toString().padStart(3, '0')
-      const valB = b.id.toString().padStart(3, '0')
-      return sortType.value === 'asc'
-        ? valA.localeCompare(valB)
-        : valB.localeCompare(valA)
-    })
-
+    // 数据源本身按号码升序，无需再排序
     return result.map(n => n.id.toString().padStart(2, '0'))
   })
 
@@ -127,11 +99,16 @@ export function useFilterLogic() {
 
   const toggleFilter = (item: string) => {
     const index = selectedFilters.value.indexOf(item)
-    if (index === -1) {
-      selectedFilters.value.push(item)
-    } else {
+    if (index > -1) {
       selectedFilters.value.splice(index, 1)
+      return
     }
+    // 与反过滤互斥：同名条件自动解除禁止，避免结果恒为空
+    if (excludedFilters.value.includes(item)) {
+      excludedFilters.value = excludedFilters.value.filter(f => f !== item)
+      toast(`已取消反过滤「${item}」`)
+    }
+    selectedFilters.value.push(item)
   }
 
   const clearFilters = () => {
@@ -152,11 +129,16 @@ export function useFilterLogic() {
 
   const toggleExcludedFilter = (item: string) => {
     const index = excludedFilters.value.indexOf(item)
-    if (index === -1) {
-      excludedFilters.value.push(item)
-    } else {
+    if (index > -1) {
       excludedFilters.value.splice(index, 1)
+      return
     }
+    // 与正向筛选互斥：同名条件自动取消筛选
+    if (selectedFilters.value.includes(item)) {
+      selectedFilters.value = selectedFilters.value.filter(f => f !== item)
+      toast(`已取消筛选「${item}」`)
+    }
+    excludedFilters.value.push(item)
   }
 
   const onSave = () => {
@@ -193,11 +175,9 @@ export function useFilterLogic() {
   return {
     selectedFilters,
     excludedFilters,
+    excludedNumbers,
     filteredNumbers,
     totalItems,
-    searchText,
-    searchType,
-    sortType,
     toggleFilter,
     clearFilters,
     toggleExclusion,

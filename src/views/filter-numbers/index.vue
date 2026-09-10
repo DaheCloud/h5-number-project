@@ -7,7 +7,7 @@ import ResultStickyHeader from './components/ResultStickyHeader.vue'
 
 const router = useRouter()
 const {
-  selectedFilters, excludedFilters, filteredNumbers, totalItems,
+  selectedFilters, excludedFilters, excludedNumbers, filteredNumbers, totalItems,
   toggleFilter, clearFilters, toggleExclusion, toggleExcludedFilter,
   onSave, onLoad, getWaveColorById,
   groupedByZodiac,
@@ -28,7 +28,19 @@ function toggleSection(name: string) {
 // 统计每个分区的选中数量
 const basicKeys = ['单', '双', '大', '小', '红波', '绿波', '蓝波', '金', '木', '水', '火', '土']
 const zodiacKeys = ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪', '家禽', '野兽', '天肖', '地肖', '前肖', '后肖', '左肖', '右肖', '阴肖', '阳肖', '红单', '红双', '绿单', '绿双', '蓝单', '蓝双', '男肖', '女肖', '肉肖', '菜肖', '草肖', '春', '夏', '秋', '冬', '风', '雨', '雷', '电', '琴', '棋', '书', '画']
-const excludedKeys = ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪']
+// ── 反过滤分组 ──
+const excludedZodiacKeys = ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪']
+const excludedWaveKeys = ['红单', '红双', '绿单', '绿双', '蓝单', '蓝双']
+const excludedWuxingKeys = ['金', '木', '水', '火', '土']
+const excludedDuanKeys = ['1段', '2段', '3段', '4段', '5段', '6段', '7段']
+const excludedTailKeys = ['0尾', '1尾', '2尾', '3尾', '4尾', '5尾', '6尾', '7尾', '8尾', '9尾']
+const excludedKeys = [
+  ...excludedZodiacKeys,
+  ...excludedWaveKeys,
+  ...excludedWuxingKeys,
+  ...excludedDuanKeys,
+  ...excludedTailKeys,
+]
 const headTailKeys = ['0头', '1头', '2头', '3头', '4头', '0尾', '1尾', '2尾', '3尾', '4尾', '5尾', '6尾', '7尾', '8尾', '9尾']
 const compositeKeys = ['合单', '合双', '合大', '合小', '尾大', '尾小', '大单', '小单', '大双', '小双', '1门', '2门', '3门', '4门', '5门', '1段', '2段', '3段', '4段', '5段', '6段', '7段', '1合', '2合', '3合', '4合', '5合', '6合', '7合', '8合', '9合', '10合', '11合', '12合', '13合']
 
@@ -61,6 +73,13 @@ function waveComboClass(item: string): string {
   if (item.startsWith('红')) return 'cwc--red'
   if (item.startsWith('绿')) return 'cwc--green'
   if (item.startsWith('蓝')) return 'cwc--blue'
+  return ''
+}
+// 反过滤：波色单双未选中时保留波色着色
+function excludeWaveClass(item: string): string {
+  if (item.startsWith('红')) return 'chip-ex--red'
+  if (item.startsWith('绿')) return 'chip-ex--green'
+  if (item.startsWith('蓝')) return 'chip-ex--blue'
   return ''
 }
 </script>
@@ -104,11 +123,14 @@ function waveComboClass(item: string): string {
         :total-items="totalItems"
         :selected-count="selectedCount"
         :selected-filters="selectedFilters"
+        :excluded-filters="excludedFilters"
+        :excluded-numbers="excludedNumbers"
         :filtered-numbers="filteredNumbers"
         :get-wave-color="getWaveColorById"
         :grouped-by-zodiac="groupedByZodiac"
         @clear="clearFilters"
         @remove-filter="toggleFilter"
+        @remove-excluded-filter="toggleExcludedFilter"
         @toggle-exclusion="toggleExclusion"
       />
 
@@ -230,11 +252,58 @@ function waveComboClass(item: string): string {
             <div class="text-[10px] font-semibold text-secondary">禁止生肖（排除对应号码）</div>
             <div class="grid grid-cols-6 gap-1.5">
               <button
-                v-for="item in excludedKeys"
+                v-for="item in excludedZodiacKeys"
                 :key="item"
                 type="button"
-                class="chip-zodiac"
-                :class="{ 'chip-zodiac--excluded': excludedFilters.includes(item) }"
+                class="chip-ex"
+                :class="{ 'chip-ex--excluded': excludedFilters.includes(item) }"
+                @click="toggleExcludedFilter(item)"
+              >{{ item }}</button>
+            </div>
+          </div>
+
+          <!-- 波色 / 五行 / 段数 / 尾数：不分类，统一小按钮平铺 -->
+          <div class="exclude-chips">
+            <div class="grid grid-cols-6 gap-1.5">
+              <button
+                v-for="item in excludedWaveKeys"
+                :key="item"
+                type="button"
+                class="chip-ex"
+                :class="[excludeWaveClass(item), { 'chip-ex--excluded': excludedFilters.includes(item) }]"
+                @click="toggleExcludedFilter(item)"
+              >{{ item }}</button>
+            </div>
+
+            <div class="grid grid-cols-5 gap-1.5">
+              <button
+                v-for="item in excludedWuxingKeys"
+                :key="item"
+                type="button"
+                class="chip-ex"
+                :class="{ 'chip-ex--excluded': excludedFilters.includes(item) }"
+                @click="toggleExcludedFilter(item)"
+              >{{ item }}</button>
+            </div>
+
+            <div class="grid grid-cols-7 gap-1.5">
+              <button
+                v-for="item in excludedDuanKeys"
+                :key="item"
+                type="button"
+                class="chip-ex"
+                :class="{ 'chip-ex--excluded': excludedFilters.includes(item) }"
+                @click="toggleExcludedFilter(item)"
+              >{{ item }}</button>
+            </div>
+
+            <div class="grid grid-cols-5 gap-1.5">
+              <button
+                v-for="item in excludedTailKeys"
+                :key="item"
+                type="button"
+                class="chip-ex"
+                :class="{ 'chip-ex--excluded': excludedFilters.includes(item) }"
                 @click="toggleExcludedFilter(item)"
               >{{ item }}</button>
             </div>
@@ -474,8 +543,10 @@ function waveComboClass(item: string): string {
 .segmented-chip--active {
   background: var(--color-primary);
   color: var(--color-primary-content);
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-primary) 45%, transparent), inset 0 0 0 2px color-mix(in srgb, var(--color-primary) 50%, #000);
   font-weight: 700;
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--color-primary) 28%, transparent),
+    0 3px 10px color-mix(in srgb, var(--color-primary) 45%, transparent);
 }
 
 /* ═══ 波色按钮（大色块） ═══ */
@@ -514,21 +585,27 @@ function waveComboClass(item: string): string {
   background: var(--color-error);
   border-color: var(--color-error);
   color: var(--color-error-content);
-  box-shadow: 0 2px 10px color-mix(in srgb, var(--color-error) 55%, transparent), inset 0 0 0 2px color-mix(in srgb, var(--color-error) 50%, #000);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--color-error) 28%, transparent),
+    0 3px 10px color-mix(in srgb, var(--color-error) 50%, transparent);
 }
 .chip-wave--active.chip-wave--red:hover { filter: brightness(1.08); }
 .chip-wave--active.chip-wave--green {
   background: var(--color-success);
   border-color: var(--color-success);
   color: var(--color-success-content);
-  box-shadow: 0 2px 10px color-mix(in srgb, var(--color-success) 55%, transparent), inset 0 0 0 2px color-mix(in srgb, var(--color-success) 50%, #000);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--color-success) 28%, transparent),
+    0 3px 10px color-mix(in srgb, var(--color-success) 50%, transparent);
 }
 .chip-wave--active.chip-wave--green:hover { filter: brightness(1.08); }
 .chip-wave--active.chip-wave--blue {
   background: var(--color-info);
   border-color: var(--color-info);
   color: var(--color-info-content);
-  box-shadow: 0 2px 10px color-mix(in srgb, var(--color-info) 55%, transparent), inset 0 0 0 2px color-mix(in srgb, var(--color-info) 50%, #000);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--color-info) 28%, transparent),
+    0 3px 10px color-mix(in srgb, var(--color-info) 50%, transparent);
 }
 .chip-wave--active.chip-wave--blue:hover { filter: brightness(1.08); }
 
@@ -553,7 +630,9 @@ function waveComboClass(item: string): string {
   background: var(--color-primary);
   color: var(--color-primary-content);
   font-weight: 700;
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-primary) 45%, transparent), inset 0 0 0 2px color-mix(in srgb, var(--color-primary) 50%, #000);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--color-primary) 28%, transparent),
+    0 3px 10px color-mix(in srgb, var(--color-primary) 45%, transparent);
 }
 .chip-wuxing--active:hover {
   filter: brightness(1.08);
@@ -572,31 +651,19 @@ function waveComboClass(item: string): string {
   border: 1px solid transparent;
 }
 .chip-zodiac:active { transform: scale(0.96); }
-.chip-zodiac:not(.chip-zodiac--active):not(.chip-zodiac--excluded):hover { background: var(--color-base-300); }
+.chip-zodiac:not(.chip-zodiac--active):hover { background: var(--color-base-300); }
 .chip-zodiac--active {
   background: var(--color-primary);
   color: var(--color-primary-content);
   border-color: var(--color-primary);
   font-weight: 700;
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-primary) 45%, transparent), inset 0 0 0 2px color-mix(in srgb, var(--color-primary) 50%, #000);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--color-primary) 28%, transparent),
+    0 3px 10px color-mix(in srgb, var(--color-primary) 45%, transparent);
 }
 .chip-zodiac--active:hover {
   background: var(--color-primary);
   color: var(--color-primary-content);
-  filter: brightness(1.08);
-}
-
-/* 反过滤：禁止态（红色警示） */
-.chip-zodiac--excluded {
-  background: var(--color-error);
-  color: var(--color-error-content);
-  border-color: var(--color-error);
-  font-weight: 700;
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-error) 45%, transparent), inset 0 0 0 2px color-mix(in srgb, var(--color-error) 50%, #000);
-  text-decoration: line-through;
-  text-decoration-thickness: 1.5px;
-}
-.chip-zodiac--excluded:hover {
   filter: brightness(1.08);
 }
 
@@ -607,6 +674,77 @@ function waveComboClass(item: string): string {
 .section-count--exclude {
   background: color-mix(in srgb, var(--color-error) 18%, transparent);
   color: var(--color-error);
+}
+
+/* 反过滤：小尺寸芯片（无分类平铺） */
+.chip-ex {
+  height: 28px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s, transform 0.1s;
+  background: var(--color-base-200);
+  color: var(--color-secondary);
+  border: 1px solid transparent;
+}
+.chip-ex:active { transform: scale(0.96); }
+.chip-ex:not(.chip-ex--excluded):hover {
+  background: var(--color-base-300);
+  color: var(--color-base-content);
+}
+
+/* 反过滤：波色单双未选中时保留波色着色，选中后统一为红色警示 */
+.chip-ex--red:not(.chip-ex--excluded) {
+  color: var(--color-error);
+  background: color-mix(in srgb, var(--color-error) 8%, transparent);
+  border-color: color-mix(in srgb, var(--color-error) 35%, transparent);
+}
+.chip-ex--green:not(.chip-ex--excluded) {
+  color: var(--color-success);
+  background: color-mix(in srgb, var(--color-success) 8%, transparent);
+  border-color: color-mix(in srgb, var(--color-success) 35%, transparent);
+}
+.chip-ex--blue:not(.chip-ex--excluded) {
+  color: var(--color-info);
+  background: color-mix(in srgb, var(--color-info) 8%, transparent);
+  border-color: color-mix(in srgb, var(--color-info) 35%, transparent);
+}
+.chip-ex.chip-ex--red:not(.chip-ex--excluded):hover {
+  background: color-mix(in srgb, var(--color-error) 18%, transparent);
+}
+.chip-ex.chip-ex--green:not(.chip-ex--excluded):hover {
+  background: color-mix(in srgb, var(--color-success) 18%, transparent);
+}
+.chip-ex.chip-ex--blue:not(.chip-ex--excluded):hover {
+  background: color-mix(in srgb, var(--color-info) 18%, transparent);
+}
+
+/* 反过滤：禁止态（红色实底 + 外圈警示描边，确保选中足够醒目） */
+.chip-ex.chip-ex--excluded {
+  background: var(--color-error);
+  color: var(--color-error-content);
+  border-color: var(--color-error);
+  font-weight: 700;
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--color-error) 30%, transparent),
+    0 3px 10px color-mix(in srgb, var(--color-error) 55%, transparent);
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+  text-decoration-color: color-mix(in srgb, var(--color-error-content) 90%, transparent);
+}
+.chip-ex.chip-ex--excluded:hover {
+  filter: brightness(1.06);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--color-error) 45%, transparent),
+    0 3px 14px color-mix(in srgb, var(--color-error) 65%, transparent);
+}
+
+/* 反过滤：无分类平铺容器 */
+.exclude-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 /* ═══ 标签芯片（多属性） ═══ */
@@ -633,7 +771,9 @@ function waveComboClass(item: string): string {
   color: var(--color-primary-content);
   font-weight: 700;
   border-color: var(--color-primary);
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-primary) 45%, transparent), inset 0 0 0 2px color-mix(in srgb, var(--color-primary) 50%, #000);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--color-primary) 28%, transparent),
+    0 3px 10px color-mix(in srgb, var(--color-primary) 45%, transparent);
 }
 .chip-tag--active:hover { filter: brightness(1.08); }
 /* 标签芯片波色变体：未选中时按波色着色，选中时实色填充 */
@@ -645,21 +785,27 @@ function waveComboClass(item: string): string {
   background: var(--color-error);
   border-color: var(--color-error);
   color: var(--color-error-content);
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-error) 45%, transparent), inset 0 0 0 2px color-mix(in srgb, var(--color-error) 50%, #000);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--color-error) 28%, transparent),
+    0 3px 10px color-mix(in srgb, var(--color-error) 50%, transparent);
 }
 .chip-tag.cwc--red.chip-tag--active:hover { filter: brightness(1.08); }
 .chip-tag.cwc--green.chip-tag--active {
   background: var(--color-success);
   border-color: var(--color-success);
   color: var(--color-success-content);
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-success) 45%, transparent), inset 0 0 0 2px color-mix(in srgb, var(--color-success) 50%, #000);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--color-success) 28%, transparent),
+    0 3px 10px color-mix(in srgb, var(--color-success) 50%, transparent);
 }
 .chip-tag.cwc--green.chip-tag--active:hover { filter: brightness(1.08); }
 .chip-tag.cwc--blue.chip-tag--active {
   background: var(--color-info);
   border-color: var(--color-info);
   color: var(--color-info-content);
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-info) 45%, transparent), inset 0 0 0 2px color-mix(in srgb, var(--color-info) 50%, #000);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--color-info) 28%, transparent),
+    0 3px 10px color-mix(in srgb, var(--color-info) 50%, transparent);
 }
 .chip-tag.cwc--blue.chip-tag--active:hover { filter: brightness(1.08); }
 
@@ -684,25 +830,11 @@ function waveComboClass(item: string): string {
   background: var(--color-primary);
   color: var(--color-primary-content);
   font-weight: 700;
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-primary) 45%, transparent), inset 0 0 0 2px color-mix(in srgb, var(--color-primary) 50%, #000);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--color-primary) 28%, transparent),
+    0 3px 10px color-mix(in srgb, var(--color-primary) 45%, transparent);
 }
 .chip-tail--active:hover {
   filter: brightness(1.08);
-}
-
-/* ═══ 选中态勾选角标：右上角小圆点 ═══ */
-.segmented-chip--active::after,
-.chip-wuxing--active::after,
-.chip-zodiac--active::after,
-.chip-tail--active::after {
-  content: "";
-  position: absolute;
-  top: 3px;
-  right: 3px;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: currentColor;
-  opacity: 0.6;
 }
 </style>

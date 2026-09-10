@@ -11,6 +11,8 @@ const props = defineProps<{
   totalItems: number
   selectedCount: number
   selectedFilters: string[]
+  excludedFilters: string[]
+  excludedNumbers: string[]
   filteredNumbers: string[]
   getWaveColor: (id: number) => string
   groupedByZodiac: ZodiacGroup[]
@@ -19,10 +21,23 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'clear'): void
   (e: 'removeFilter', item: string): void
+  (e: 'removeExcludedFilter', item: string): void
   (e: 'toggleExclusion', num: string): void
 }>()
 
-const showHeader = computed(() => props.selectedCount > 0 || props.filteredNumbers.length > 0)
+const showHeader = computed(() =>
+  props.selectedFilters.length > 0
+  || props.excludedFilters.length > 0
+  || props.excludedNumbers.length > 0
+  || props.filteredNumbers.length > 0
+)
+
+/** 是否存在条件标签（正向 / 禁止 / 已排除） */
+const hasTags = computed(() =>
+  props.selectedFilters.length > 0
+  || props.excludedFilters.length > 0
+  || props.excludedNumbers.length > 0
+)
 
 // ── 详情弹窗 ──
 const showDetail = ref(false)
@@ -71,6 +86,13 @@ const copyResults = async () => {
           <span class="stat-label">已选</span>
           <span class="stat-value text-primary">{{ selectedCount }}</span>
         </span>
+        <template v-if="excludedFilters.length > 0">
+          <span class="stat-divider"></span>
+          <span class="stat-item">
+            <span class="stat-label">禁止</span>
+            <span class="stat-value text-error">{{ excludedFilters.length }}</span>
+          </span>
+        </template>
         <span class="stat-divider"></span>
         <span class="stat-item">
           <span class="stat-label">结果</span>
@@ -90,13 +112,27 @@ const copyResults = async () => {
       </div>
     </div>
 
-    <!-- 已选筛选标签（横向滚动） -->
-    <div v-if="selectedCount > 0" class="result-bar__tags scrollbar-hide">
-      <button v-for="item in selectedFilters" :key="item"
+    <!-- 已选 / 禁止 / 已排除 标签（横向滚动，点击即可撤销） -->
+    <div v-if="hasTags" class="result-bar__tags scrollbar-hide">
+      <button v-for="item in selectedFilters" :key="`f-${item}`"
         class="result-tag"
         @click="emit('removeFilter', item)"
       >
         {{ item }}
+        <span class="icon-[tabler--x] size-3 opacity-70"></span>
+      </button>
+      <button v-for="item in excludedFilters" :key="`ex-${item}`"
+        class="result-tag result-tag--exclude"
+        @click="emit('removeExcludedFilter', item)"
+      >
+        禁止 {{ item }}
+        <span class="icon-[tabler--x] size-3 opacity-70"></span>
+      </button>
+      <button v-for="num in excludedNumbers" :key="`n-${num}`"
+        class="result-tag result-tag--num"
+        @click="emit('toggleExclusion', num)"
+      >
+        排除 {{ num }}
         <span class="icon-[tabler--x] size-3 opacity-70"></span>
       </button>
     </div>
@@ -115,7 +151,7 @@ const copyResults = async () => {
         :title="`点击移除 ${num}`"
       >{{ num }}</div>
     </div>
-    <div v-else-if="selectedCount > 0" class="result-bar__empty">无匹配号码</div>
+    <div v-else-if="hasTags" class="result-bar__empty">无匹配号码</div>
 
     <!-- ═══ 详情 Drawer：底部弹出，按生肖分类展示 ═══ -->
     <Teleport to="body">
@@ -318,6 +354,27 @@ const copyResults = async () => {
 }
 .result-tag:hover {
   background: color-mix(in srgb, var(--color-primary) 25%, transparent);
+}
+
+/* 反过滤条件标签（红色警示，点击撤销禁止） */
+.result-tag--exclude {
+  background: color-mix(in srgb, var(--color-error) 14%, transparent);
+  color: var(--color-error);
+  border-color: color-mix(in srgb, var(--color-error) 30%, transparent);
+}
+.result-tag--exclude:hover {
+  background: color-mix(in srgb, var(--color-error) 24%, transparent);
+}
+
+/* 手动排除的号码标签（点击恢复） */
+.result-tag--num {
+  background: var(--color-base-200);
+  color: var(--color-secondary);
+  border-color: var(--color-base-300);
+}
+.result-tag--num:hover {
+  background: var(--color-base-300);
+  color: var(--color-base-content);
 }
 
 .result-bar__numbers {

@@ -42,4 +42,44 @@ describe('useFilterLogic', () => {
     expect(filteredNumbers.value).toContain('25');
     expect(filteredNumbers.value).not.toContain('02');
   });
+
+  it('should keep positive filter and exclusion mutually exclusive', () => {
+    const { selectedFilters, excludedFilters, toggleFilter, toggleExcludedFilter } = useFilterLogic();
+
+    toggleExcludedFilter('鼠');
+    expect(excludedFilters.value).toContain('鼠');
+
+    // 正向选中同名条件时，自动解除反过滤
+    toggleFilter('鼠');
+    expect(selectedFilters.value).toContain('鼠');
+    expect(excludedFilters.value).not.toContain('鼠');
+
+    // 反向操作同理
+    toggleExcludedFilter('鼠');
+    expect(excludedFilters.value).toContain('鼠');
+    expect(selectedFilters.value).not.toContain('鼠');
+  });
+
+  it('should exclude numbers by wave odd/even filters', () => {
+    const { filteredNumbers, toggleFilter, toggleExcludedFilter } = useFilterLogic();
+
+    toggleFilter('单');
+    // Mock: 01 是红波单数，25 是蓝波单数
+    expect(filteredNumbers.value).toContain('01');
+    expect(filteredNumbers.value).toContain('25');
+
+    toggleExcludedFilter('红单');
+    expect(filteredNumbers.value).not.toContain('01');
+    expect(filteredNumbers.value).toContain('25');
+  });
+
+  it('should expose manually excluded numbers and allow restore', () => {
+    const { excludedNumbers, toggleExclusion } = useFilterLogic();
+
+    toggleExclusion('07');
+    expect(excludedNumbers.value).toContain('07');
+
+    toggleExclusion('07');
+    expect(excludedNumbers.value).not.toContain('07');
+  });
 });
