@@ -33,12 +33,14 @@ const excludedZodiacKeys = ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '�
 const excludedWaveKeys = ['红单', '红双', '绿单', '绿双', '蓝单', '蓝双']
 const excludedWuxingKeys = ['金', '木', '水', '火', '土']
 const excludedDuanKeys = ['1段', '2段', '3段', '4段', '5段', '6段', '7段']
+const excludedHeadKeys = ['0头', '1头', '2头', '3头', '4头']
 const excludedTailKeys = ['0尾', '1尾', '2尾', '3尾', '4尾', '5尾', '6尾', '7尾', '8尾', '9尾']
 const excludedKeys = [
   ...excludedZodiacKeys,
   ...excludedWaveKeys,
   ...excludedWuxingKeys,
   ...excludedDuanKeys,
+  ...excludedHeadKeys,
   ...excludedTailKeys,
 ]
 const headTailKeys = ['0头', '1头', '2头', '3头', '4头', '0尾', '1尾', '2尾', '3尾', '4尾', '5尾', '6尾', '7尾', '8尾', '9尾']
@@ -262,7 +264,7 @@ function excludeWaveClass(item: string): string {
             </div>
           </div>
 
-          <!-- 波色 / 五行 / 段数 / 尾数：不分类，统一小按钮平铺 -->
+          <!-- 波色 / 五行 / 段数 / 头数 / 尾数：不分类，统一小按钮平铺 -->
           <div class="exclude-chips">
             <div class="grid grid-cols-6 gap-1.5">
               <button
@@ -289,6 +291,17 @@ function excludeWaveClass(item: string): string {
             <div class="grid grid-cols-7 gap-1.5">
               <button
                 v-for="item in excludedDuanKeys"
+                :key="item"
+                type="button"
+                class="chip-ex"
+                :class="{ 'chip-ex--excluded': excludedFilters.includes(item) }"
+                @click="toggleExcludedFilter(item)"
+              >{{ item }}</button>
+            </div>
+
+            <div class="grid grid-cols-5 gap-1.5">
+              <button
+                v-for="item in excludedHeadKeys"
                 :key="item"
                 type="button"
                 class="chip-ex"

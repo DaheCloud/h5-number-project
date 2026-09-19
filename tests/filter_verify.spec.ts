@@ -73,6 +73,19 @@ describe('useFilterLogic', () => {
     expect(filteredNumbers.value).toContain('25');
   });
 
+  it('should exclude numbers by head filters', () => {
+    const { filteredNumbers, toggleFilter, toggleExcludedFilter } = useFilterLogic();
+
+    toggleFilter('单');
+    // Mock: 01 为 0 头，25 为 2 头
+    expect(filteredNumbers.value).toContain('01');
+    expect(filteredNumbers.value).toContain('25');
+
+    toggleExcludedFilter('0头');
+    expect(filteredNumbers.value).not.toContain('01');
+    expect(filteredNumbers.value).toContain('25');
+  });
+
   it('should expose manually excluded numbers and allow restore', () => {
     const { excludedNumbers, toggleExclusion } = useFilterLogic();
 
